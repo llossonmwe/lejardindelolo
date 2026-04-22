@@ -44,6 +44,7 @@
   let currentUser = null;
   let appStarted = false;
   let calMonth = new Date().getMonth() + 1; // 1..12
+  const photoState = { file: null, previewUrl: '' };
 
   // ─── Helpers ───
   const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
@@ -412,37 +413,44 @@
     document.getElementById('search').addEventListener('input', renderPlants);
     document.getElementById('filter-type').addEventListener('change', renderPlants);
 
-    const photoInput = document.getElementById('plant-photo');
+    const photoCamera = document.getElementById('plant-photo-camera');
+    const photoGallery = document.getElementById('plant-photo-gallery');
     const photoPreview = document.getElementById('plant-photo-preview');
     const photoRemoveWrap = document.getElementById('plant-photo-remove-wrap');
     const photoRemove = document.getElementById('plant-photo-remove');
     const photoPathInput = document.getElementById('plant-photo-path');
-    let pendingPhotoPreviewUrl = '';
+
     const closePlantDialog = () => {
-      if (pendingPhotoPreviewUrl) {
-        URL.revokeObjectURL(pendingPhotoPreviewUrl);
-        pendingPhotoPreviewUrl = '';
+      if (photoState.previewUrl) {
+        URL.revokeObjectURL(photoState.previewUrl);
+        photoState.previewUrl = '';
       }
+      photoState.file = null;
       document.getElementById('plant-dialog').close();
     };
 
-    photoInput.addEventListener('change', () => {
-      const file = photoInput.files && photoInput.files[0];
+    function handlePhotoFile(file) {
       if (!file) return;
-      if (pendingPhotoPreviewUrl) URL.revokeObjectURL(pendingPhotoPreviewUrl);
-      pendingPhotoPreviewUrl = URL.createObjectURL(file);
-      photoPreview.src = pendingPhotoPreviewUrl;
+      photoState.file = file;
+      if (photoState.previewUrl) URL.revokeObjectURL(photoState.previewUrl);
+      photoState.previewUrl = URL.createObjectURL(file);
+      photoPreview.src = photoState.previewUrl;
       photoPreview.classList.remove('hidden');
       photoRemove.checked = false;
-    });
+    }
+
+    document.getElementById('plant-photo-camera-btn').addEventListener('click', () => { photoCamera.value = ''; photoCamera.click(); });
+    document.getElementById('plant-photo-gallery-btn').addEventListener('click', () => { photoGallery.value = ''; photoGallery.click(); });
+    photoCamera.addEventListener('change', () => handlePhotoFile(photoCamera.files && photoCamera.files[0]));
+    photoGallery.addEventListener('change', () => handlePhotoFile(photoGallery.files && photoGallery.files[0]));
 
     document.getElementById('add-plant-btn').addEventListener('click', () => openDialog(null));
-  document.getElementById('cancel-btn').addEventListener('click', closePlantDialog);
+    document.getElementById('cancel-btn').addEventListener('click', closePlantDialog);
 
     document.getElementById('plant-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = e.target;
-      const file = photoInput.files && photoInput.files[0];
+      const file = photoState.file;
       const removeCurrentPhoto = photoRemove.checked;
       const previousPhotoPath = photoPathInput.value || '';
       const data = {
@@ -795,13 +803,22 @@
     const dialog = document.getElementById('plant-dialog');
     const form = document.getElementById('plant-form');
     const dialogTitle = document.getElementById('dialog-title');
-    const photoInput = form.querySelector('#plant-photo');
     const photoPreview = form.querySelector('#plant-photo-preview');
     const photoPathInput = form.querySelector('#plant-photo-path');
     const photoRemoveWrap = form.querySelector('#plant-photo-remove-wrap');
     const photoRemove = form.querySelector('#plant-photo-remove');
     form.reset();
-    photoInput.value = '';
+    // reset preview state
+    if (photoState.previewUrl) {
+      URL.revokeObjectURL(photoState.previewUrl);
+      photoState.previewUrl = '';
+    }
+    photoState.file = null;
+    // reset hidden file inputs
+    const camIn = document.getElementById('plant-photo-camera');
+    const galIn = document.getElementById('plant-photo-gallery');
+    if (camIn) camIn.value = '';
+    if (galIn) galIn.value = '';
     photoPathInput.value = '';
     photoRemove.checked = false;
     photoPreview.src = '';

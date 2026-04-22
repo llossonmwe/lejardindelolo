@@ -355,6 +355,13 @@ dialog textarea { min-height: 60px; resize: vertical; }
   font-weight: 600;
   color: var(--muted);
 }
+.photo-btns {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.photo-btns .btn { flex: 1; min-width: 120px; }
 .plant-photo-preview {
   width: 100%;
   max-height: 220px;

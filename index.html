@@ -172,9 +172,14 @@
       <fieldset class="photo-group">
         <legend>Photo (optionnel)</legend>
         <input type="hidden" id="plant-photo-path" />
-        <label>Ajouter / changer la photo
-          <input type="file" id="plant-photo" accept="image/*" capture="environment" />
-        </label>
+        <!-- input caméra (mobile) -->
+        <input type="file" id="plant-photo-camera" accept="image/*" capture="environment" hidden />
+        <!-- input galerie / fichiers (tous appareils) -->
+        <input type="file" id="plant-photo-gallery" accept="image/*" hidden />
+        <div class="photo-btns">
+          <button type="button" class="btn" id="plant-photo-camera-btn">📷 Caméra</button>
+          <button type="button" class="btn" id="plant-photo-gallery-btn">🖼️ Galerie / fichier</button>
+        </div>
         <img id="plant-photo-preview" class="plant-photo-preview hidden" alt="Aperçu de la photo" />
         <label class="checkbox hidden" id="plant-photo-remove-wrap">
           <input type="checkbox" id="plant-photo-remove" /> Supprimer la photo actuelle
