@@ -6,7 +6,7 @@
 //
 // Pour déployer une nouvelle version, change CACHE_VERSION ci-dessous.
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v5';
 const APP_CACHE = 'jardin-app-' + CACHE_VERSION;
 const CDN_CACHE = 'jardin-cdn-' + CACHE_VERSION;
 
