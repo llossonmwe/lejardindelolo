@@ -322,6 +322,19 @@ dialog input, dialog select, dialog textarea {
 }
 dialog textarea { min-height: 60px; resize: vertical; }
 .dialog-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem; }
+.dialog-actions-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem 0.4rem;
+  margin: 0.3rem 0;
+  background: var(--green-50);
+}
+.dialog-actions-group legend {
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
 
 .toast {
   position: fixed;
