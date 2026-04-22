@@ -8,6 +8,6 @@
 // Row Level Security (RLS) policies définies dans supabase-schema.sql.
 
 window.SUPABASE_CONFIG = {
-  url: 'https://VOTRE-PROJET.supabase.co',
-  anonKey: 'VOTRE_CLE_ANON_PUBLIQUE'
+  url: 'https://zdafqhojekacaiowiqiq.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYWZxaG9qZWthY2Fpb3dpcWlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NjM4MTAsImV4cCI6MjA5MjQzOTgxMH0.DD0dipNZWJe9X3wbhChBVlyFUmTX20Aq6RZEwvtHiaQ'
 };
