@@ -26,17 +26,18 @@
   const authScreen = document.getElementById('auth-screen');
   const appEl = document.getElementById('app');
   const authForm = document.getElementById('auth-form');
+  const authChoice = document.getElementById('auth-choice');
   const authUser = document.getElementById('auth-username');
   const authPass = document.getElementById('auth-password');
   const authError = document.getElementById('auth-error');
   const authInfo = document.getElementById('auth-info');
   const authSubmit = document.getElementById('auth-submit');
-  const authToggle = document.getElementById('auth-toggle');
+  const authBack = document.getElementById('auth-back');
   const authSubtitle = document.getElementById('auth-subtitle');
   const userGreeting = document.getElementById('user-greeting');
   const logoutBtn = document.getElementById('logout-btn');
 
-  let authMode = 'login';
+  let authMode = null; // null = écran de choix, 'login' ou 'signup' = formulaire
   let state = { plants: [], journal: [] };
   let currentUser = null;
   let appStarted = false;
@@ -79,26 +80,43 @@
   // ═══════════════════════════════════════════════════════════════
   // AUTH
   // ═══════════════════════════════════════════════════════════════
-  function updateAuthUI() {
+  function showChoice() {
+    authMode = null;
+    authForm.classList.add('hidden');
+    authChoice.classList.remove('hidden');
+    authSubtitle.textContent = 'Bienvenue ! Que souhaitez-vous faire ?';
+    authForm.reset();
     authError.classList.add('hidden');
     authInfo.classList.add('hidden');
-    if (authMode === 'signup') {
+  }
+
+  function showForm(mode) {
+    authMode = mode;
+    authChoice.classList.add('hidden');
+    authForm.classList.remove('hidden');
+    authError.classList.add('hidden');
+    authInfo.classList.add('hidden');
+    if (mode === 'signup') {
       authSubtitle.textContent = 'Créez votre compte pour commencer';
       authSubmit.textContent = 'Créer mon compte';
-      authToggle.textContent = 'J\'ai déjà un compte';
+      authPass.autocomplete = 'new-password';
     } else {
       authSubtitle.textContent = 'Connectez-vous pour accéder à votre jardin';
       authSubmit.textContent = 'Se connecter';
-      authToggle.textContent = 'Créer un compte';
+      authPass.autocomplete = 'current-password';
     }
+    setTimeout(() => authUser.focus(), 50);
   }
-  updateAuthUI();
 
-  authToggle.addEventListener('click', () => {
-    authMode = authMode === 'login' ? 'signup' : 'login';
-    authForm.reset();
-    updateAuthUI();
+  showChoice();
+
+  authChoice.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-choice]');
+    if (!btn) return;
+    showForm(btn.dataset.choice);
   });
+
+  authBack.addEventListener('click', showChoice);
 
   const showErr = (msg) => { authError.textContent = msg; authError.classList.remove('hidden'); authInfo.classList.add('hidden'); };
   const showInfo = (msg) => { authInfo.textContent = msg; authInfo.classList.remove('hidden'); authError.classList.add('hidden'); };
@@ -117,9 +135,8 @@
         if (error) throw error;
         if (!data.session) {
           showInfo('Compte créé ! Vérifiez vos emails pour confirmer, puis connectez-vous.');
-          authMode = 'login';
           authForm.reset();
-          setTimeout(updateAuthUI, 50);
+          setTimeout(() => showForm('login'), 50);
         }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
