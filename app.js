@@ -41,6 +41,7 @@
   let state = { plants: [], journal: [] };
   let currentUser = null;
   let appStarted = false;
+  let calMonth = new Date().getMonth() + 1; // 1..12
 
   // ─── Helpers ───
   const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
@@ -397,6 +398,12 @@
         await reloadAll();
       } catch (err) { toast('Erreur: ' + err.message); }
     });
+
+    // Calendrier : navigation
+    document.getElementById('cal-prev').addEventListener('click', () => { calMonth = (calMonth + 10) % 12 + 1; renderCalendar(); });
+    document.getElementById('cal-next').addEventListener('click', () => { calMonth = calMonth % 12 + 1; renderCalendar(); });
+    document.getElementById('cal-search').addEventListener('input', renderCalendar);
+    document.getElementById('cal-filter').addEventListener('change', renderCalendar);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -498,6 +505,50 @@
       `).join('');
   }
 
+  function renderCalendar() {
+    const data = window.PLANT_CALENDAR || [];
+    const titleEl = document.getElementById('cal-title');
+    const contentEl = document.getElementById('calendar-content');
+    if (!titleEl || !contentEl) return;
+
+    const MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    titleEl.textContent = MONTHS[calMonth - 1];
+
+    const q = (document.getElementById('cal-search').value || '').trim().toLowerCase();
+    const filter = document.getElementById('cal-filter').value;
+
+    const ACTIONS = [
+      { key: 'sow_indoor',  label: 'Semis intérieur',  icon: '🏠' },
+      { key: 'sow_outdoor', label: 'Semis extérieur',  icon: '🌱' },
+      { key: 'plant',       label: 'Plantation',       icon: '🪴' },
+      { key: 'harvest',     label: 'Récolte',          icon: '🌾' }
+    ];
+
+    const matchSearch = (p) => !q || p.name.toLowerCase().includes(q);
+
+    const sections = ACTIONS
+      .filter(a => !filter || filter === a.key)
+      .map(a => {
+        const plants = data
+          .filter(p => (p[a.key] || []).includes(calMonth) && matchSearch(p))
+          .sort((x, y) => x.name.localeCompare(y.name, 'fr'));
+        return { action: a, plants };
+      });
+
+    contentEl.innerHTML = sections.map(({ action, plants }) => `
+      <div class="cal-section ${action.key}">
+        <h3>${action.icon} ${action.label} <span style="color:var(--muted);font-weight:400;font-size:0.85rem;">(${plants.length})</span></h3>
+        ${plants.length === 0
+          ? `<p class="empty-action">Rien à faire ce mois-ci.</p>`
+          : `<div class="cal-tags">${plants.map(p => `
+              <span class="cal-tag" title="${esc(TYPE_LABEL[p.type] || '')}">
+                <span class="type-emoji">${TYPE_EMOJI[p.type] || '🌱'}</span>${esc(p.name)}
+              </span>`).join('')}</div>`
+        }
+      </div>
+    `).join('');
+  }
+
   function openDialog(plant) {
     const dialog = document.getElementById('plant-dialog');
     const form = document.getElementById('plant-form');
@@ -525,6 +576,7 @@
   function renderAll() {
     renderPlants();
     renderTasks();
+    renderCalendar();
     renderJournal();
     renderStats();
   }
