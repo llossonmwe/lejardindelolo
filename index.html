@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#3b8f58" />
   <title>🌱 Le jardin de Lolo</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -12,9 +13,17 @@
     <div class="auth-card">
       <div class="auth-logo">🌱</div>
       <h1>Le jardin de Lolo</h1>
-      <p id="auth-subtitle" class="auth-subtitle">Connectez-vous pour accéder à votre jardin</p>
+      <p id="auth-subtitle" class="auth-subtitle">Bienvenue ! Que souhaitez-vous faire ?</p>
 
-      <form id="auth-form" class="auth-form" autocomplete="off">
+      <!-- Étape 1 : choix -->
+      <div id="auth-choice" class="auth-choice">
+        <button type="button" class="btn primary big" data-choice="login">🔑 Se connecter</button>
+        <button type="button" class="btn big" data-choice="signup">✨ Créer un compte</button>
+        <p class="auth-hint">Vos plantes sont synchronisées entre tous vos appareils.</p>
+      </div>
+
+      <!-- Étape 2 : formulaire -->
+      <form id="auth-form" class="auth-form hidden" autocomplete="off">
         <label>
           Email
           <input type="email" id="auth-username" required maxlength="80" autocomplete="email" />
@@ -28,7 +37,7 @@
         <p id="auth-info" class="auth-info hidden"></p>
 
         <button type="submit" id="auth-submit" class="btn primary">Se connecter</button>
-        <button type="button" id="auth-toggle" class="btn link">Créer un compte</button>
+        <button type="button" id="auth-back" class="btn link">← Retour</button>
       </form>
     </div>
   </div>
