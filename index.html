@@ -169,6 +169,17 @@
         <input type="number" id="plant-interval" min="1" max="60" value="3" required />
       </label>
       <label>Dernier arrosage <input type="date" id="plant-lastwater" /></label>
+      <fieldset class="photo-group">
+        <legend>Photo (optionnel)</legend>
+        <input type="hidden" id="plant-photo-path" />
+        <label>Ajouter / changer la photo
+          <input type="file" id="plant-photo" accept="image/*" capture="environment" />
+        </label>
+        <img id="plant-photo-preview" class="plant-photo-preview hidden" alt="Aperçu de la photo" />
+        <label class="checkbox hidden" id="plant-photo-remove-wrap">
+          <input type="checkbox" id="plant-photo-remove" /> Supprimer la photo actuelle
+        </label>
+      </fieldset>
       <fieldset class="dialog-actions-group">
         <legend>Entretien (optionnel)</legend>
         <label>Dernière taille <input type="date" id="plant-lastprune" /></label>
