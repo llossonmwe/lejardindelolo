@@ -370,6 +370,10 @@
         planted: f.querySelector('#plant-planted').value,
         interval_days: Math.max(1, Math.min(60, parseInt(f.querySelector('#plant-interval').value, 10) || 3)),
         last_water: f.querySelector('#plant-lastwater').value,
+        last_prune: f.querySelector('#plant-lastprune').value,
+        last_cuttings: f.querySelector('#plant-lastcuttings').value,
+        last_divide: f.querySelector('#plant-lastdivide').value,
+        last_treat: f.querySelector('#plant-lasttreat').value,
         notes: f.querySelector('#plant-notes').value.trim()
       };
       if (!data.name) return;
@@ -700,6 +704,10 @@
       form.querySelector('#plant-planted').value = plant.planted || '';
       form.querySelector('#plant-interval').value = plant.interval_days || 3;
       form.querySelector('#plant-lastwater').value = plant.last_water || '';
+      form.querySelector('#plant-lastprune').value = plant.last_prune || '';
+      form.querySelector('#plant-lastcuttings').value = plant.last_cuttings || '';
+      form.querySelector('#plant-lastdivide').value = plant.last_divide || '';
+      form.querySelector('#plant-lasttreat').value = plant.last_treat || '';
       form.querySelector('#plant-notes').value = plant.notes || '';
     } else {
       dialogTitle.textContent = 'Nouvelle plante';
