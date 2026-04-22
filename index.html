@@ -49,6 +49,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="plants">Mes plantes</button>
       <button class="tab" data-tab="tasks">Tâches à venir</button>
+      <button class="tab" data-tab="calendar">Calendrier</button>
       <button class="tab" data-tab="journal">Journal</button>
       <button class="tab" data-tab="stats">Statistiques</button>
       <button id="logout-btn" class="tab logout">Déconnexion</button>
@@ -80,6 +81,27 @@
       <h2>💧 Arrosages & entretien à venir</h2>
       <ul id="tasks-list" class="tasks"></ul>
       <p id="empty-tasks" class="empty hidden">Aucune tâche planifiée.</p>
+    </section>
+
+    <!-- Onglet calendrier -->
+    <section id="calendar" class="tab-panel">
+      <div class="calendar-header">
+        <button id="cal-prev" class="btn" aria-label="Mois précédent">‹</button>
+        <h2 id="cal-title">—</h2>
+        <button id="cal-next" class="btn" aria-label="Mois suivant">›</button>
+      </div>
+      <div class="calendar-toolbar">
+        <input type="search" id="cal-search" placeholder="🔍 Rechercher une plante..." />
+        <select id="cal-filter">
+          <option value="">Toutes les actions</option>
+          <option value="sow_indoor">🏠 Semis intérieur</option>
+          <option value="sow_outdoor">🌱 Semis extérieur</option>
+          <option value="plant">🪴 Plantation</option>
+          <option value="harvest">🌾 Récolte</option>
+        </select>
+      </div>
+      <div id="calendar-content"></div>
+      <p class="calendar-note">ℹ️ Guide indicatif pour un climat tempéré. Ajustez selon votre région et la météo.</p>
     </section>
 
     <!-- Onglet journal -->
@@ -147,6 +169,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
+  <script src="plant-calendar.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
