@@ -306,6 +306,14 @@ dialog textarea { min-height: 60px; resize: vertical; }
   font-size: 0.85rem;
   margin: 0;
 }
+.auth-info {
+  background: var(--green-100);
+  color: var(--green-700);
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
 
 .user-greeting {
   font-size: 0.9rem;
