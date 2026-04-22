@@ -7,13 +7,45 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Écran d'identification -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">🌱</div>
+      <h1>Le jardin de Lolo</h1>
+      <p id="auth-subtitle" class="auth-subtitle">Connectez-vous pour accéder à votre jardin</p>
+
+      <form id="auth-form" class="auth-form" autocomplete="off">
+        <label>
+          Nom d'utilisateur
+          <input type="text" id="auth-username" required maxlength="30" autocomplete="username" />
+        </label>
+        <label>
+          Mot de passe
+          <input type="password" id="auth-password" required minlength="4" maxlength="64" autocomplete="current-password" />
+        </label>
+        <label id="auth-confirm-wrap" class="hidden">
+          Confirmer le mot de passe
+          <input type="password" id="auth-password2" minlength="4" maxlength="64" autocomplete="new-password" />
+        </label>
+
+        <p id="auth-error" class="auth-error hidden"></p>
+
+        <button type="submit" id="auth-submit" class="btn primary">Se connecter</button>
+        <button type="button" id="auth-toggle" class="btn link">Créer un compte</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application -->
+  <div id="app" class="hidden">
   <header class="app-header">
-    <h1>🌱 Le jardin de Lolo</h1>
+    <h1>🌱 Le jardin de Lolo <span id="user-greeting" class="user-greeting"></span></h1>
     <nav class="tabs">
       <button class="tab active" data-tab="plants">Mes plantes</button>
       <button class="tab" data-tab="tasks">Tâches à venir</button>
       <button class="tab" data-tab="journal">Journal</button>
       <button class="tab" data-tab="stats">Statistiques</button>
+      <button id="logout-btn" class="tab logout">Déconnexion</button>
     </nav>
   </header>
 
@@ -105,6 +137,7 @@
   </dialog>
 
   <div id="toast" class="toast hidden"></div>
+  </div><!-- /#app -->
 
   <script src="app.js"></script>
 </body>

@@ -253,3 +253,65 @@ dialog textarea { min-height: 60px; resize: vertical; }
   main { padding: 1rem; }
   .tab { padding: 0.6rem 0.9rem; font-size: 0.85rem; }
 }
+
+/* --- Authentification --- */
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, var(--green-600), var(--green-500));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+.auth-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 2rem 1.75rem;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  text-align: center;
+}
+.auth-logo { font-size: 3rem; margin-bottom: 0.25rem; }
+.auth-card h1 { margin: 0 0 0.25rem; color: var(--green-700); font-size: 1.5rem; }
+.auth-subtitle { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.9rem; }
+
+.auth-form { display: flex; flex-direction: column; gap: 0.9rem; text-align: left; }
+.auth-form label { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--muted); gap: 0.3rem; }
+.auth-form input {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.auth-form input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px var(--green-100); }
+.auth-form .btn { margin-top: 0.25rem; }
+.btn.link {
+  background: transparent;
+  border: none;
+  color: var(--green-700);
+  text-decoration: underline;
+  padding: 0.35rem;
+  font-size: 0.85rem;
+}
+.btn.link:hover { color: var(--green-600); }
+.auth-error {
+  background: #fde0df;
+  color: var(--danger);
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.user-greeting {
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-left: 0.5rem;
+}
+.tab.logout { margin-left: auto; opacity: 0.85; }
+.tab.logout:hover { background: rgba(255,255,255,0.2); color: white; }

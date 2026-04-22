@@ -2,7 +2,143 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'garden-manager-v1';
+  // ====== AUTHENTIFICATION ======
+  const AUTH_KEY = 'garden-auth-v1';
+  const SESSION_KEY = 'garden-session-v1';
+
+  const authScreen = document.getElementById('auth-screen');
+  const appEl = document.getElementById('app');
+  const authForm = document.getElementById('auth-form');
+  const authUser = document.getElementById('auth-username');
+  const authPass = document.getElementById('auth-password');
+  const authPass2 = document.getElementById('auth-password2');
+  const authConfirmWrap = document.getElementById('auth-confirm-wrap');
+  const authError = document.getElementById('auth-error');
+  const authSubmit = document.getElementById('auth-submit');
+  const authToggle = document.getElementById('auth-toggle');
+  const authSubtitle = document.getElementById('auth-subtitle');
+  const userGreeting = document.getElementById('user-greeting');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  // Mode: 'login' ou 'signup'. Détecté selon si un compte existe déjà.
+  let authMode = localStorage.getItem(AUTH_KEY) ? 'login' : 'signup';
+  updateAuthUI();
+
+  function updateAuthUI() {
+    if (authMode === 'signup') {
+      authSubtitle.textContent = 'Créez votre compte pour commencer';
+      authSubmit.textContent = 'Créer mon compte';
+      authToggle.textContent = localStorage.getItem(AUTH_KEY) ? 'J\'ai déjà un compte' : '';
+      authToggle.classList.toggle('hidden', !localStorage.getItem(AUTH_KEY));
+      authConfirmWrap.classList.remove('hidden');
+      authPass2.required = true;
+      authPass.autocomplete = 'new-password';
+    } else {
+      authSubtitle.textContent = 'Connectez-vous pour accéder à votre jardin';
+      authSubmit.textContent = 'Se connecter';
+      authToggle.textContent = 'Créer un autre compte';
+      authToggle.classList.remove('hidden');
+      authConfirmWrap.classList.add('hidden');
+      authPass2.required = false;
+      authPass.autocomplete = 'current-password';
+    }
+    authError.classList.add('hidden');
+  }
+
+  authToggle.addEventListener('click', () => {
+    authMode = authMode === 'login' ? 'signup' : 'login';
+    authForm.reset();
+    updateAuthUI();
+  });
+
+  function showAuthError(msg) {
+    authError.textContent = msg;
+    authError.classList.remove('hidden');
+  }
+
+  // Hash SHA-256 + sel aléatoire (stockage local uniquement)
+  async function hashPassword(password, salt) {
+    const enc = new TextEncoder().encode(salt + ':' + password);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function randomSalt() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function getAccounts() {
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || {}; }
+    catch { return {}; }
+  }
+
+  async function handleSignup(username, password, password2) {
+    if (password !== password2) { showAuthError('Les mots de passe ne correspondent pas.'); return; }
+    if (password.length < 4) { showAuthError('Mot de passe trop court (4 caractères min).'); return; }
+    const accounts = getAccounts();
+    const key = username.toLowerCase();
+    if (accounts[key]) { showAuthError('Ce nom d\'utilisateur est déjà pris.'); return; }
+    const salt = randomSalt();
+    const hash = await hashPassword(password, salt);
+    accounts[key] = { username, salt, hash };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(accounts));
+    sessionStorage.setItem(SESSION_KEY, username);
+    startApp(username);
+  }
+
+  async function handleLogin(username, password) {
+    const accounts = getAccounts();
+    const account = accounts[username.toLowerCase()];
+    if (!account) { showAuthError('Identifiants incorrects.'); return; }
+    const hash = await hashPassword(password, account.salt);
+    if (hash !== account.hash) { showAuthError('Identifiants incorrects.'); return; }
+    sessionStorage.setItem(SESSION_KEY, account.username);
+    startApp(account.username);
+  }
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.add('hidden');
+    const username = authUser.value.trim();
+    const password = authPass.value;
+    if (!username || !password) return;
+    authSubmit.disabled = true;
+    try {
+      if (authMode === 'signup') {
+        await handleSignup(username, password, authPass2.value);
+      } else {
+        await handleLogin(username, password);
+      }
+    } catch (err) {
+      showAuthError('Erreur: ' + err.message);
+    } finally {
+      authSubmit.disabled = false;
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  });
+
+  // Session active ?
+  const activeSession = sessionStorage.getItem(SESSION_KEY);
+  if (activeSession) {
+    startApp(activeSession);
+  }
+
+  function startApp(username) {
+    authScreen.classList.add('hidden');
+    appEl.classList.remove('hidden');
+    userGreeting.textContent = '— ' + username;
+    initGardenApp(username);
+  }
+
+  // ====== APPLICATION JARDIN ======
+  function initGardenApp(username) {
+  const STORAGE_KEY = 'garden-manager-v1:' + username.toLowerCase();
   const TYPE_EMOJI = {
     legume: '🥕', fruit: '🍓', fleur: '🌸', aromate: '🌿', arbre: '🌳', autre: '🌱'
   };
@@ -72,9 +208,9 @@
   }
 
   // --- Onglets ---
-  document.querySelectorAll('.tab').forEach(btn => {
+  document.querySelectorAll('.tab[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab[data-tab]').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(btn.dataset.tab).classList.add('active');
@@ -366,4 +502,5 @@
   }
 
   renderAll();
+  } // fin initGardenApp
 })();
