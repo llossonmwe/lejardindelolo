@@ -134,6 +134,28 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 .card-actions { display: flex; gap: 0.4rem; margin-top: auto; flex-wrap: wrap; }
 .card-actions .btn { padding: 0.4rem 0.7rem; font-size: 0.8rem; flex: 1; min-width: 80px; }
 
+.plant-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.4rem 0;
+  padding: 0.5rem 0.6rem;
+  background: var(--green-50);
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+}
+.plant-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.plant-action-info { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
+.pa-icon { font-size: 1.1rem; flex-shrink: 0; }
+.pa-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.pa-meta { font-size: 0.72rem; color: var(--muted); line-height: 1.2; }
+.btn.small { padding: 0.3rem 0.6rem; font-size: 0.75rem; flex-shrink: 0; }
+
 .empty { text-align: center; color: var(--muted); padding: 2rem; font-style: italic; }
 .hidden { display: none !important; }
 
@@ -252,6 +274,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 .cal-section.sow_outdoor { border-left-color: var(--green-500); }
 .cal-section.plant       { border-left-color: #6b8cae; }
 .cal-section.harvest     { border-left-color: #c85a5a; }
+.cal-section.prune       { border-left-color: #9b59b6; }
+.cal-section.cuttings    { border-left-color: #2e8b8b; }
+.cal-section.divide      { border-left-color: #c98ac9; }
+.cal-section.treat       { border-left-color: #4a90c2; }
 .cal-section p.empty-action { color: var(--muted); margin: 0; font-size: 0.9rem; font-style: italic; }
 .cal-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .cal-tag {
@@ -267,6 +293,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 .cal-section.sow_indoor  .cal-tag { background: #fbebd4; color: #8a5a1c; }
 .cal-section.plant       .cal-tag { background: #dde5ee; color: #334d6e; }
 .cal-section.harvest     .cal-tag { background: #fbd9d9; color: #8a2525; }
+.cal-section.prune       .cal-tag { background: #ebdcf2; color: #5a2e6e; }
+.cal-section.cuttings    .cal-tag { background: #d6ecec; color: #1f5959; }
+.cal-section.divide      .cal-tag { background: #f4e1f4; color: #6b3a6b; }
+.cal-section.treat       .cal-tag { background: #d8e7f2; color: #2c5a7a; }
 .cal-tag .type-emoji { font-size: 0.95rem; }
 .calendar-note { color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 1rem; }
 
