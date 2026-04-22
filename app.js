@@ -1,144 +1,19 @@
-// 🌱 Gestionnaire de jardin - logique principale
+// 🌱 Le jardin de Lolo — version Supabase (sync multi-appareils)
 (() => {
   'use strict';
 
-  // ====== AUTHENTIFICATION ======
-  const AUTH_KEY = 'garden-auth-v1';
-  const SESSION_KEY = 'garden-session-v1';
-
-  const authScreen = document.getElementById('auth-screen');
-  const appEl = document.getElementById('app');
-  const authForm = document.getElementById('auth-form');
-  const authUser = document.getElementById('auth-username');
-  const authPass = document.getElementById('auth-password');
-  const authPass2 = document.getElementById('auth-password2');
-  const authConfirmWrap = document.getElementById('auth-confirm-wrap');
-  const authError = document.getElementById('auth-error');
-  const authSubmit = document.getElementById('auth-submit');
-  const authToggle = document.getElementById('auth-toggle');
-  const authSubtitle = document.getElementById('auth-subtitle');
-  const userGreeting = document.getElementById('user-greeting');
-  const logoutBtn = document.getElementById('logout-btn');
-
-  // Mode: 'login' ou 'signup'. Détecté selon si un compte existe déjà.
-  let authMode = localStorage.getItem(AUTH_KEY) ? 'login' : 'signup';
-  updateAuthUI();
-
-  function updateAuthUI() {
-    if (authMode === 'signup') {
-      authSubtitle.textContent = 'Créez votre compte pour commencer';
-      authSubmit.textContent = 'Créer mon compte';
-      authToggle.textContent = localStorage.getItem(AUTH_KEY) ? 'J\'ai déjà un compte' : '';
-      authToggle.classList.toggle('hidden', !localStorage.getItem(AUTH_KEY));
-      authConfirmWrap.classList.remove('hidden');
-      authPass2.required = true;
-      authPass.autocomplete = 'new-password';
-    } else {
-      authSubtitle.textContent = 'Connectez-vous pour accéder à votre jardin';
-      authSubmit.textContent = 'Se connecter';
-      authToggle.textContent = 'Créer un autre compte';
-      authToggle.classList.remove('hidden');
-      authConfirmWrap.classList.add('hidden');
-      authPass2.required = false;
-      authPass.autocomplete = 'current-password';
-    }
-    authError.classList.add('hidden');
+  // ═══════════════════════════════════════════════════════════════
+  // Supabase client
+  // ═══════════════════════════════════════════════════════════════
+  if (!window.SUPABASE_CONFIG || !window.supabase) {
+    alert('Configuration Supabase manquante. Vérifiez supabase-config.js.');
+    return;
   }
+  const sb = window.supabase.createClient(
+    window.SUPABASE_CONFIG.url,
+    window.SUPABASE_CONFIG.anonKey
+  );
 
-  authToggle.addEventListener('click', () => {
-    authMode = authMode === 'login' ? 'signup' : 'login';
-    authForm.reset();
-    updateAuthUI();
-  });
-
-  function showAuthError(msg) {
-    authError.textContent = msg;
-    authError.classList.remove('hidden');
-  }
-
-  // Hash SHA-256 + sel aléatoire (stockage local uniquement)
-  async function hashPassword(password, salt) {
-    const enc = new TextEncoder().encode(salt + ':' + password);
-    const buf = await crypto.subtle.digest('SHA-256', enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  function randomSalt() {
-    const arr = new Uint8Array(16);
-    crypto.getRandomValues(arr);
-    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  function getAccounts() {
-    try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || {}; }
-    catch { return {}; }
-  }
-
-  async function handleSignup(username, password, password2) {
-    if (password !== password2) { showAuthError('Les mots de passe ne correspondent pas.'); return; }
-    if (password.length < 4) { showAuthError('Mot de passe trop court (4 caractères min).'); return; }
-    const accounts = getAccounts();
-    const key = username.toLowerCase();
-    if (accounts[key]) { showAuthError('Ce nom d\'utilisateur est déjà pris.'); return; }
-    const salt = randomSalt();
-    const hash = await hashPassword(password, salt);
-    accounts[key] = { username, salt, hash };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(accounts));
-    sessionStorage.setItem(SESSION_KEY, username);
-    startApp(username);
-  }
-
-  async function handleLogin(username, password) {
-    const accounts = getAccounts();
-    const account = accounts[username.toLowerCase()];
-    if (!account) { showAuthError('Identifiants incorrects.'); return; }
-    const hash = await hashPassword(password, account.salt);
-    if (hash !== account.hash) { showAuthError('Identifiants incorrects.'); return; }
-    sessionStorage.setItem(SESSION_KEY, account.username);
-    startApp(account.username);
-  }
-
-  authForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    authError.classList.add('hidden');
-    const username = authUser.value.trim();
-    const password = authPass.value;
-    if (!username || !password) return;
-    authSubmit.disabled = true;
-    try {
-      if (authMode === 'signup') {
-        await handleSignup(username, password, authPass2.value);
-      } else {
-        await handleLogin(username, password);
-      }
-    } catch (err) {
-      showAuthError('Erreur: ' + err.message);
-    } finally {
-      authSubmit.disabled = false;
-    }
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    sessionStorage.removeItem(SESSION_KEY);
-    location.reload();
-  });
-
-  // Session active ?
-  const activeSession = sessionStorage.getItem(SESSION_KEY);
-  if (activeSession) {
-    startApp(activeSession);
-  }
-
-  function startApp(username) {
-    authScreen.classList.add('hidden');
-    appEl.classList.remove('hidden');
-    userGreeting.textContent = '— ' + username;
-    initGardenApp(username);
-  }
-
-  // ====== APPLICATION JARDIN ======
-  function initGardenApp(username) {
-  const STORAGE_KEY = 'garden-manager-v1:' + username.toLowerCase();
   const TYPE_EMOJI = {
     legume: '🥕', fruit: '🍓', fleur: '🌸', aromate: '🌿', arbre: '🌳', autre: '🌱'
   };
@@ -147,43 +22,42 @@
     aromate: 'Aromate', arbre: 'Arbre', autre: 'Autre'
   };
 
-  // --- État ---
-  let state = loadState();
+  // ─── DOM refs ───
+  const authScreen = document.getElementById('auth-screen');
+  const appEl = document.getElementById('app');
+  const authForm = document.getElementById('auth-form');
+  const authUser = document.getElementById('auth-username');
+  const authPass = document.getElementById('auth-password');
+  const authError = document.getElementById('auth-error');
+  const authInfo = document.getElementById('auth-info');
+  const authSubmit = document.getElementById('auth-submit');
+  const authToggle = document.getElementById('auth-toggle');
+  const authSubtitle = document.getElementById('auth-subtitle');
+  const userGreeting = document.getElementById('user-greeting');
+  const logoutBtn = document.getElementById('logout-btn');
 
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { plants: [], journal: [] };
-      const parsed = JSON.parse(raw);
-      return {
-        plants: Array.isArray(parsed.plants) ? parsed.plants : [],
-        journal: Array.isArray(parsed.journal) ? parsed.journal : []
-      };
-    } catch {
-      return { plants: [], journal: [] };
-    }
-  }
+  let authMode = 'login';
+  let state = { plants: [], journal: [] };
+  let currentUser = null;
+  let appStarted = false;
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-
-  // --- Utilitaires ---
-  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  // ─── Helpers ───
   const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
   const parseDate = (s) => { if (!s) return null; const d = new Date(s); d.setHours(0,0,0,0); return isNaN(d) ? null : d; };
   const formatDate = (d) => d ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
   const toISO = (d) => d.toISOString().slice(0, 10);
   const daysBetween = (a, b) => Math.round((b - a) / 86400000);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 
   function nextWatering(plant) {
-    const last = parseDate(plant.lastWater);
+    const last = parseDate(plant.last_water);
     if (!last) return today();
     const next = new Date(last);
-    next.setDate(next.getDate() + Number(plant.interval || 3));
+    next.setDate(next.getDate() + Number(plant.interval_days || 3));
     return next;
   }
-
   function waterStatus(plant) {
     const next = nextWatering(plant);
     const diff = daysBetween(today(), next);
@@ -192,12 +66,7 @@
     return { key: 'ok', label: `Dans ${diff}j`, days: diff };
   }
 
-  // --- Sécurité: échappement HTML ---
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
-
-  // --- Toast ---
+  // ─── Toast ───
   const toastEl = document.getElementById('toast');
   let toastTimer;
   function toast(msg) {
@@ -207,28 +76,325 @@
     toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 2500);
   }
 
-  // --- Onglets ---
-  document.querySelectorAll('.tab[data-tab]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab[data-tab]').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById(btn.dataset.tab).classList.add('active');
-      renderAll();
-    });
+  // ═══════════════════════════════════════════════════════════════
+  // AUTH
+  // ═══════════════════════════════════════════════════════════════
+  function updateAuthUI() {
+    authError.classList.add('hidden');
+    authInfo.classList.add('hidden');
+    if (authMode === 'signup') {
+      authSubtitle.textContent = 'Créez votre compte pour commencer';
+      authSubmit.textContent = 'Créer mon compte';
+      authToggle.textContent = 'J\'ai déjà un compte';
+    } else {
+      authSubtitle.textContent = 'Connectez-vous pour accéder à votre jardin';
+      authSubmit.textContent = 'Se connecter';
+      authToggle.textContent = 'Créer un compte';
+    }
+  }
+  updateAuthUI();
+
+  authToggle.addEventListener('click', () => {
+    authMode = authMode === 'login' ? 'signup' : 'login';
+    authForm.reset();
+    updateAuthUI();
   });
 
-  // --- Rendu plantes ---
+  const showErr = (msg) => { authError.textContent = msg; authError.classList.remove('hidden'); authInfo.classList.add('hidden'); };
+  const showInfo = (msg) => { authInfo.textContent = msg; authInfo.classList.remove('hidden'); authError.classList.add('hidden'); };
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.add('hidden');
+    authInfo.classList.add('hidden');
+    const email = authUser.value.trim();
+    const password = authPass.value;
+    if (!email || !password) return;
+    authSubmit.disabled = true;
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await sb.auth.signUp({ email, password });
+        if (error) throw error;
+        if (!data.session) {
+          showInfo('Compte créé ! Vérifiez vos emails pour confirmer, puis connectez-vous.');
+          authMode = 'login';
+          authForm.reset();
+          setTimeout(updateAuthUI, 50);
+        }
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err) {
+      showErr(translateAuthError(err));
+    } finally {
+      authSubmit.disabled = false;
+    }
+  });
+
+  function translateAuthError(err) {
+    const m = err?.message || String(err);
+    if (/invalid login credentials/i.test(m)) return 'Email ou mot de passe incorrect.';
+    if (/user already registered/i.test(m)) return 'Un compte existe déjà avec cet email.';
+    if (/email.*confirm/i.test(m)) return 'Confirmez votre email avant de vous connecter.';
+    if (/password/i.test(m) && /short|least/i.test(m)) return 'Mot de passe trop court (6 caractères min).';
+    if (/rate/i.test(m)) return 'Trop de tentatives, réessayez plus tard.';
+    return m;
+  }
+
+  logoutBtn.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      if (!appStarted) startApp(session.user);
+    } else if (appStarted) {
+      location.reload();
+    }
+  });
+
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session?.user && !appStarted) startApp(data.session.user);
+  });
+
+  function startApp(user) {
+    appStarted = true;
+    currentUser = user;
+    authScreen.classList.add('hidden');
+    appEl.classList.remove('hidden');
+    userGreeting.textContent = '— ' + (user.email || '');
+    wireAppUI();
+    reloadAll();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DATA (Supabase)
+  // ═══════════════════════════════════════════════════════════════
+  async function fetchPlants() {
+    const { data, error } = await sb.from('plants').select('*').order('created_at', { ascending: true });
+    if (error) { console.error(error); toast('Erreur chargement plantes'); return []; }
+    return data || [];
+  }
+  async function fetchJournal() {
+    const { data, error } = await sb.from('journal').select('*').order('created_at', { ascending: false });
+    if (error) { console.error(error); toast('Erreur chargement journal'); return []; }
+    return data || [];
+  }
+  async function reloadAll() {
+    state.plants = await fetchPlants();
+    state.journal = await fetchJournal();
+    renderAll();
+  }
+
+  async function upsertPlant(plant) {
+    const payload = {
+      user_id: currentUser.id,
+      name: plant.name,
+      type: plant.type,
+      location: plant.location || '',
+      planted: plant.planted || null,
+      interval_days: plant.interval_days,
+      last_water: plant.last_water || null,
+      notes: plant.notes || ''
+    };
+    if (plant.id) {
+      const { error } = await sb.from('plants').update(payload).eq('id', plant.id);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('plants').insert(payload);
+      if (error) throw error;
+    }
+  }
+  async function deletePlantById(id) {
+    const { error } = await sb.from('plants').delete().eq('id', id);
+    if (error) throw error;
+  }
+  async function markWatered(id) {
+    const { error } = await sb.from('plants').update({ last_water: toISO(today()) }).eq('id', id);
+    if (error) throw error;
+  }
+  async function addJournalEntry(text) {
+    const { error } = await sb.from('journal').insert({ user_id: currentUser.id, text });
+    if (error) throw error;
+  }
+  async function deleteJournalEntry(id) {
+    const { error } = await sb.from('journal').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // UI wiring
+  // ═══════════════════════════════════════════════════════════════
+  let uiWired = false;
+  function wireAppUI() {
+    if (uiWired) return;
+    uiWired = true;
+
+    document.querySelectorAll('.tab[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab[data-tab]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        renderAll();
+      });
+    });
+
+    document.getElementById('plants-grid').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const card = btn.closest('.plant-card');
+      const id = card.dataset.id;
+      const plant = state.plants.find(p => p.id === id);
+      if (!plant) return;
+
+      if (btn.dataset.action === 'water') {
+        try { await markWatered(id); toast(`${plant.name} arrosée 💧`); await reloadAll(); }
+        catch (err) { toast('Erreur: ' + err.message); }
+      } else if (btn.dataset.action === 'edit') {
+        openDialog(plant);
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm(`Supprimer "${plant.name}" ?`)) {
+          try { await deletePlantById(id); toast('Plante supprimée'); await reloadAll(); }
+          catch (err) { toast('Erreur: ' + err.message); }
+        }
+      }
+    });
+
+    document.getElementById('search').addEventListener('input', renderPlants);
+    document.getElementById('filter-type').addEventListener('change', renderPlants);
+
+    document.getElementById('add-plant-btn').addEventListener('click', () => openDialog(null));
+    document.getElementById('cancel-btn').addEventListener('click', () => document.getElementById('plant-dialog').close());
+
+    document.getElementById('plant-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const data = {
+        id: f.querySelector('#plant-id').value || null,
+        name: f.querySelector('#plant-name').value.trim(),
+        type: f.querySelector('#plant-type').value,
+        location: f.querySelector('#plant-location').value.trim(),
+        planted: f.querySelector('#plant-planted').value,
+        interval_days: Math.max(1, Math.min(60, parseInt(f.querySelector('#plant-interval').value, 10) || 3)),
+        last_water: f.querySelector('#plant-lastwater').value,
+        notes: f.querySelector('#plant-notes').value.trim()
+      };
+      if (!data.name) return;
+      try {
+        await upsertPlant(data);
+        toast(data.id ? 'Plante modifiée' : 'Plante ajoutée 🌱');
+        document.getElementById('plant-dialog').close();
+        await reloadAll();
+      } catch (err) {
+        toast('Erreur: ' + err.message);
+      }
+    });
+
+    document.getElementById('tasks-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-water]');
+      if (!btn) return;
+      const plant = state.plants.find(p => p.id === btn.dataset.water);
+      if (!plant) return;
+      try { await markWatered(plant.id); toast(`${plant.name} arrosée 💧`); await reloadAll(); }
+      catch (err) { toast('Erreur: ' + err.message); }
+    });
+
+    document.getElementById('journal-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const txt = document.getElementById('journal-text').value.trim();
+      if (!txt) return;
+      try {
+        await addJournalEntry(txt);
+        document.getElementById('journal-text').value = '';
+        toast('Entrée ajoutée 📓');
+        await reloadAll();
+      } catch (err) { toast('Erreur: ' + err.message); }
+    });
+
+    document.getElementById('journal-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-del]');
+      if (!btn) return;
+      try { await deleteJournalEntry(btn.dataset.del); await reloadAll(); }
+      catch (err) { toast('Erreur: ' + err.message); }
+    });
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `jardin-${toISO(today())}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Export téléchargé');
+    });
+
+    document.getElementById('import-file').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        if (!Array.isArray(data.plants) || !Array.isArray(data.journal)) throw new Error('bad format');
+        if (!confirm('Ajouter les données du fichier à votre compte ?')) return;
+        const plantRows = data.plants.map(p => ({
+          user_id: currentUser.id,
+          name: p.name || 'Sans nom',
+          type: ['legume','fruit','fleur','aromate','arbre','autre'].includes(p.type) ? p.type : 'autre',
+          location: p.location || '',
+          planted: p.planted || null,
+          interval_days: p.interval_days || p.interval || 3,
+          last_water: p.last_water || p.lastWater || null,
+          notes: p.notes || ''
+        }));
+        const journalRows = data.journal.map(j => ({
+          user_id: currentUser.id,
+          text: j.text || '',
+          created_at: j.date || j.created_at || new Date().toISOString()
+        })).filter(j => j.text);
+        if (plantRows.length) {
+          const { error } = await sb.from('plants').insert(plantRows);
+          if (error) throw error;
+        }
+        if (journalRows.length) {
+          const { error } = await sb.from('journal').insert(journalRows);
+          if (error) throw error;
+        }
+        toast('Import réussi ✅');
+        await reloadAll();
+      } catch (err) {
+        alert('Import impossible : ' + err.message);
+      }
+      e.target.value = '';
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', async () => {
+      if (!confirm('Effacer TOUTES vos données (plantes + journal) ? Irréversible.')) return;
+      try {
+        const { error: e1 } = await sb.from('plants').delete().eq('user_id', currentUser.id);
+        const { error: e2 } = await sb.from('journal').delete().eq('user_id', currentUser.id);
+        if (e1 || e2) throw (e1 || e2);
+        toast('Données effacées');
+        await reloadAll();
+      } catch (err) { toast('Erreur: ' + err.message); }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Rendus
+  // ═══════════════════════════════════════════════════════════════
   const plantsGrid = document.getElementById('plants-grid');
   const emptyPlants = document.getElementById('empty-plants');
   const searchInput = document.getElementById('search');
   const filterType = document.getElementById('filter-type');
 
   function renderPlants() {
-    const q = searchInput.value.trim().toLowerCase();
+    const q = (searchInput.value || '').trim().toLowerCase();
     const type = filterType.value;
     const filtered = state.plants.filter(p => {
-      const matchQ = !q || p.name.toLowerCase().includes(q) || (p.location || '').toLowerCase().includes(q);
+      const matchQ = !q || (p.name || '').toLowerCase().includes(q) || (p.location || '').toLowerCase().includes(q);
       const matchT = !type || p.type === type;
       return matchQ && matchT;
     });
@@ -257,98 +423,11 @@
     }).join('');
   }
 
-  plantsGrid.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    const card = btn.closest('.plant-card');
-    const id = card.dataset.id;
-    const plant = state.plants.find(p => p.id === id);
-    if (!plant) return;
-
-    if (btn.dataset.action === 'water') {
-      plant.lastWater = toISO(today());
-      saveState();
-      toast(`${plant.name} arrosée 💧`);
-      renderAll();
-    } else if (btn.dataset.action === 'edit') {
-      openDialog(plant);
-    } else if (btn.dataset.action === 'delete') {
-      if (confirm(`Supprimer "${plant.name}" ?`)) {
-        state.plants = state.plants.filter(p => p.id !== id);
-        saveState();
-        toast('Plante supprimée');
-        renderAll();
-      }
-    }
-  });
-
-  searchInput.addEventListener('input', renderPlants);
-  filterType.addEventListener('change', renderPlants);
-
-  // --- Dialogue ---
-  const dialog = document.getElementById('plant-dialog');
-  const form = document.getElementById('plant-form');
-  const dialogTitle = document.getElementById('dialog-title');
-
-  function openDialog(plant) {
-    form.reset();
-    if (plant) {
-      dialogTitle.textContent = 'Modifier la plante';
-      form.querySelector('#plant-id').value = plant.id;
-      form.querySelector('#plant-name').value = plant.name;
-      form.querySelector('#plant-type').value = plant.type;
-      form.querySelector('#plant-location').value = plant.location || '';
-      form.querySelector('#plant-planted').value = plant.planted || '';
-      form.querySelector('#plant-interval').value = plant.interval || 3;
-      form.querySelector('#plant-lastwater').value = plant.lastWater || '';
-      form.querySelector('#plant-notes').value = plant.notes || '';
-    } else {
-      dialogTitle.textContent = 'Nouvelle plante';
-      form.querySelector('#plant-id').value = '';
-      form.querySelector('#plant-interval').value = 3;
-      form.querySelector('#plant-planted').value = toISO(today());
-    }
-    dialog.showModal();
-  }
-
-  document.getElementById('add-plant-btn').addEventListener('click', () => openDialog(null));
-  document.getElementById('cancel-btn').addEventListener('click', () => dialog.close());
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const id = form.querySelector('#plant-id').value;
-    const data = {
-      id: id || uid(),
-      name: form.querySelector('#plant-name').value.trim(),
-      type: form.querySelector('#plant-type').value,
-      location: form.querySelector('#plant-location').value.trim(),
-      planted: form.querySelector('#plant-planted').value,
-      interval: Math.max(1, Math.min(60, parseInt(form.querySelector('#plant-interval').value, 10) || 3)),
-      lastWater: form.querySelector('#plant-lastwater').value,
-      notes: form.querySelector('#plant-notes').value.trim()
-    };
-    if (!data.name) return;
-
-    if (id) {
-      const idx = state.plants.findIndex(p => p.id === id);
-      if (idx >= 0) state.plants[idx] = data;
-      toast('Plante modifiée');
-    } else {
-      state.plants.push(data);
-      toast('Plante ajoutée 🌱');
-    }
-    saveState();
-    dialog.close();
-    renderAll();
-  });
-
-  // --- Tâches ---
   function renderTasks() {
     const list = document.getElementById('tasks-list');
     const empty = document.getElementById('empty-tasks');
     const tasks = state.plants.map(p => ({ plant: p, status: waterStatus(p), next: nextWatering(p) }))
       .sort((a, b) => a.next - b.next);
-
     empty.classList.toggle('hidden', tasks.length > 0);
     list.innerHTML = tasks.map(t => {
       const cls = t.status.key === 'overdue' ? 'overdue' : t.status.key === 'today' ? 'today' : 'future';
@@ -364,58 +443,20 @@
     }).join('');
   }
 
-  document.getElementById('tasks-list').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-water]');
-    if (!btn) return;
-    const plant = state.plants.find(p => p.id === btn.dataset.water);
-    if (plant) {
-      plant.lastWater = toISO(today());
-      saveState();
-      toast(`${plant.name} arrosée 💧`);
-      renderAll();
-    }
-  });
-
-  // --- Journal ---
-  const journalForm = document.getElementById('journal-form');
-  const journalList = document.getElementById('journal-list');
-
-  journalForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const txt = document.getElementById('journal-text').value.trim();
-    if (!txt) return;
-    state.journal.unshift({ id: uid(), text: txt, date: new Date().toISOString() });
-    saveState();
-    document.getElementById('journal-text').value = '';
-    toast('Entrée ajoutée 📓');
-    renderJournal();
-    renderStats();
-  });
-
   function renderJournal() {
+    const journalList = document.getElementById('journal-list');
     journalList.innerHTML = state.journal.map(e => `
       <li class="journal-entry" data-id="${e.id}">
         <button class="delete-entry" data-del="${e.id}" title="Supprimer">✖</button>
-        <time>${new Date(e.date).toLocaleString('fr-FR')}</time>
+        <time>${new Date(e.created_at).toLocaleString('fr-FR')}</time>
         <p>${esc(e.text)}</p>
       </li>
     `).join('');
   }
 
-  journalList.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-del]');
-    if (!btn) return;
-    state.journal = state.journal.filter(x => x.id !== btn.dataset.del);
-    saveState();
-    renderJournal();
-    renderStats();
-  });
-
-  // --- Stats ---
   function renderStats() {
     document.getElementById('stat-total').textContent = state.plants.length;
     document.getElementById('stat-journal').textContent = state.journal.length;
-
     let watering = 0, overdue = 0;
     state.plants.forEach(p => {
       const s = waterStatus(p);
@@ -425,7 +466,6 @@
     document.getElementById('stat-watering').textContent = watering;
     document.getElementById('stat-overdue').textContent = overdue;
 
-    // Répartition par type
     const counts = {};
     state.plants.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
     const max = Math.max(1, ...Object.values(counts));
@@ -441,57 +481,28 @@
       `).join('');
   }
 
-  // --- Export / Import / Reset ---
-  document.getElementById('export-btn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `jardin-${toISO(today())}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('Export téléchargé');
-  });
-
-  document.getElementById('import-file').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result);
-        if (!Array.isArray(data.plants) || !Array.isArray(data.journal)) throw new Error('bad format');
-        if (!confirm('Remplacer les données actuelles par celles du fichier ?')) return;
-        state = { plants: data.plants, journal: data.journal };
-        saveState();
-        toast('Import réussi ✅');
-        renderAll();
-      } catch {
-        alert('Fichier invalide');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  });
-
-  document.getElementById('reset-btn').addEventListener('click', () => {
-    if (confirm('Effacer TOUTES les données (plantes + journal) ? Cette action est irréversible.')) {
-      state = { plants: [], journal: [] };
-      saveState();
-      toast('Données effacées');
-      renderAll();
+  function openDialog(plant) {
+    const dialog = document.getElementById('plant-dialog');
+    const form = document.getElementById('plant-form');
+    const dialogTitle = document.getElementById('dialog-title');
+    form.reset();
+    if (plant) {
+      dialogTitle.textContent = 'Modifier la plante';
+      form.querySelector('#plant-id').value = plant.id;
+      form.querySelector('#plant-name').value = plant.name || '';
+      form.querySelector('#plant-type').value = plant.type || 'autre';
+      form.querySelector('#plant-location').value = plant.location || '';
+      form.querySelector('#plant-planted').value = plant.planted || '';
+      form.querySelector('#plant-interval').value = plant.interval_days || 3;
+      form.querySelector('#plant-lastwater').value = plant.last_water || '';
+      form.querySelector('#plant-notes').value = plant.notes || '';
+    } else {
+      dialogTitle.textContent = 'Nouvelle plante';
+      form.querySelector('#plant-id').value = '';
+      form.querySelector('#plant-interval').value = 3;
+      form.querySelector('#plant-planted').value = toISO(today());
     }
-  });
-
-  // --- Démarrage : données d'exemple au premier lancement ---
-  if (state.plants.length === 0 && state.journal.length === 0 && !localStorage.getItem(STORAGE_KEY + '-seeded')) {
-    state.plants = [
-      { id: uid(), name: 'Tomate cerise', type: 'legume', location: 'Potager', planted: toISO(today()), interval: 2, lastWater: toISO(today()), notes: 'Variété Sungold' },
-      { id: uid(), name: 'Basilic', type: 'aromate', location: 'Balcon', planted: toISO(today()), interval: 2, lastWater: '', notes: '' },
-      { id: uid(), name: 'Rosier', type: 'fleur', location: 'Jardin', planted: toISO(today()), interval: 4, lastWater: toISO(today()), notes: '' }
-    ];
-    saveState();
-    localStorage.setItem(STORAGE_KEY + '-seeded', '1');
+    dialog.showModal();
   }
 
   function renderAll() {
@@ -500,7 +511,4 @@
     renderJournal();
     renderStats();
   }
-
-  renderAll();
-  } // fin initGardenApp
 })();
