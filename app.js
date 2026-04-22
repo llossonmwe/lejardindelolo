@@ -68,6 +68,61 @@
     return { key: 'ok', label: `Dans ${diff}j`, days: diff };
   }
 
+  // ─── Actions calendaires (taille, bouturage, division, traitement) ───
+  const ACTION_META = {
+    prune:    { label: 'Tailler',  short: 'Taille',     icon: '✂️', column: 'last_prune' },
+    cuttings: { label: 'Bouturer', short: 'Bouturage',  icon: '🌿', column: 'last_cuttings' },
+    divide:   { label: 'Diviser',  short: 'Division',   icon: '🔀', column: 'last_divide' },
+    treat:    { label: 'Traiter',  short: 'Traitement', icon: '💧', column: 'last_treat' }
+  };
+  const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+  // Trouve la fiche calendrier correspondant à la plante (match insensible à la casse)
+  function findCalendarEntry(plant) {
+    const list = window.PLANT_CALENDAR || [];
+    const n = (plant.name || '').toLowerCase().trim();
+    if (!n) return null;
+    return list.find(p => p.name.toLowerCase() === n)
+        || list.find(p => n.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(n))
+        || null;
+  }
+
+  // Prochain mois (1..12) où l'action est prévue, à partir d'aujourd'hui.
+  // Si on est déjà dans un mois prévu et que l'action n'a pas été faite ce mois, retourne ce mois (= "à faire ce mois").
+  function nextActionMonth(months, lastDoneISO) {
+    if (!Array.isArray(months) || months.length === 0) return null;
+    const now = today();
+    const curMonth = now.getMonth() + 1;
+    const last = parseDate(lastDoneISO);
+    const doneThisMonth = last && last.getMonth() + 1 === curMonth && last.getFullYear() === now.getFullYear();
+
+    if (months.includes(curMonth) && !doneThisMonth) {
+      return { month: curMonth, year: now.getFullYear(), thisMonth: true };
+    }
+    // Cherche le prochain mois (cycle sur 12)
+    for (let i = 1; i <= 12; i++) {
+      const m = ((curMonth - 1 + i) % 12) + 1;
+      if (months.includes(m)) {
+        const year = now.getFullYear() + (m <= curMonth ? 1 : 0);
+        return { month: m, year, thisMonth: false };
+      }
+    }
+    return null;
+  }
+
+  // Liste des actions disponibles pour cette plante (avec calendrier + dernière date + prochaine date)
+  function plantActions(plant) {
+    const entry = findCalendarEntry(plant);
+    if (!entry) return [];
+    return Object.entries(ACTION_META)
+      .filter(([key]) => Array.isArray(entry[key]) && entry[key].length > 0)
+      .map(([key, meta]) => {
+        const last = plant[meta.column];
+        const next = nextActionMonth(entry[key], last);
+        return { key, meta, last, next };
+      });
+  }
+
   // ─── Toast ───
   const toastEl = document.getElementById('toast');
   let toastTimer;
@@ -215,6 +270,10 @@
       planted: plant.planted || null,
       interval_days: plant.interval_days,
       last_water: plant.last_water || null,
+      last_prune: plant.last_prune || null,
+      last_cuttings: plant.last_cuttings || null,
+      last_divide: plant.last_divide || null,
+      last_treat: plant.last_treat || null,
       notes: plant.notes || ''
     };
     if (plant.id) {
@@ -231,6 +290,12 @@
   }
   async function markWatered(id) {
     const { error } = await sb.from('plants').update({ last_water: toISO(today()) }).eq('id', id);
+    if (error) throw error;
+  }
+  async function markActionDone(id, actionKey) {
+    const meta = ACTION_META[actionKey];
+    if (!meta) throw new Error('action inconnue');
+    const { error } = await sb.from('plants').update({ [meta.column]: toISO(today()) }).eq('id', id);
     if (error) throw error;
   }
   async function addJournalEntry(text) {
@@ -278,6 +343,13 @@
           try { await deletePlantById(id); toast('Plante supprimée'); await reloadAll(); }
           catch (err) { toast('Erreur: ' + err.message); }
         }
+      } else if (ACTION_META[btn.dataset.action]) {
+        const key = btn.dataset.action;
+        try {
+          await markActionDone(id, key);
+          toast(`${plant.name} : ${ACTION_META[key].short.toLowerCase()} enregistré ${ACTION_META[key].icon}`);
+          await reloadAll();
+        } catch (err) { toast('Erreur: ' + err.message); }
       }
     });
 
@@ -312,12 +384,21 @@
     });
 
     document.getElementById('tasks-list').addEventListener('click', async (e) => {
-      const btn = e.target.closest('button[data-water]');
+      const btn = e.target.closest('button[data-task-action]');
       if (!btn) return;
-      const plant = state.plants.find(p => p.id === btn.dataset.water);
+      const plant = state.plants.find(p => p.id === btn.dataset.plant);
       if (!plant) return;
-      try { await markWatered(plant.id); toast(`${plant.name} arrosée 💧`); await reloadAll(); }
-      catch (err) { toast('Erreur: ' + err.message); }
+      const key = btn.dataset.taskAction;
+      try {
+        if (key === 'water') {
+          await markWatered(plant.id);
+          toast(`${plant.name} arrosée 💧`);
+        } else if (ACTION_META[key]) {
+          await markActionDone(plant.id, key);
+          toast(`${plant.name} : ${ACTION_META[key].short.toLowerCase()} ${ACTION_META[key].icon}`);
+        }
+        await reloadAll();
+      } catch (err) { toast('Erreur: ' + err.message); }
     });
 
     document.getElementById('journal-form').addEventListener('submit', async (e) => {
@@ -428,6 +509,29 @@
       const status = waterStatus(plant);
       const next = nextWatering(plant);
       const cardClass = status.key === 'overdue' ? 'overdue' : status.key === 'today' ? 'today' : '';
+      const actions = plantActions(plant);
+      const actionsHTML = actions.length === 0 ? '' : `
+        <div class="plant-actions">
+          ${actions.map(a => {
+            const lastTxt = a.last ? formatDate(parseDate(a.last)) : 'jamais';
+            const nextTxt = a.next
+              ? (a.next.thisMonth ? `<strong style="color:var(--warn)">ce mois-ci</strong>` : `${MONTHS_FR[a.next.month - 1]} ${a.next.year}`)
+              : '—';
+            return `
+              <div class="plant-action-row">
+                <div class="plant-action-info">
+                  <span class="pa-icon">${a.meta.icon}</span>
+                  <div>
+                    <div class="pa-name">${esc(a.meta.short)}</div>
+                    <div class="pa-meta">Dernière : ${lastTxt} · Prochaine : ${nextTxt}</div>
+                  </div>
+                </div>
+                <button class="btn small" data-action="${a.key}" title="Marquer comme fait aujourd'hui">✓ Fait</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
       return `
         <article class="plant-card ${cardClass}" data-id="${plant.id}">
           <div class="emoji">${TYPE_EMOJI[plant.type] || '🌱'}</div>
@@ -435,7 +539,8 @@
           <div class="meta">${esc(TYPE_LABEL[plant.type] || 'Autre')}${plant.location ? ' · ' + esc(plant.location) : ''}</div>
           <div class="meta">Plantée le ${formatDate(parseDate(plant.planted))}</div>
           <span class="water-status ${status.key}">💧 ${esc(status.label)}</span>
-          <div class="meta">Prochain: ${formatDate(next)}</div>
+          <div class="meta">Prochain arrosage : ${formatDate(next)}</div>
+          ${actionsHTML}
           ${plant.notes ? `<div class="meta" style="font-style:italic">${esc(plant.notes)}</div>` : ''}
           <div class="card-actions">
             <button class="btn primary" data-action="water">💧 Arrosé</button>
@@ -450,21 +555,49 @@
   function renderTasks() {
     const list = document.getElementById('tasks-list');
     const empty = document.getElementById('empty-tasks');
-    const tasks = state.plants.map(p => ({ plant: p, status: waterStatus(p), next: nextWatering(p) }))
-      .sort((a, b) => a.next - b.next);
+
+    // Tâches d'arrosage (toutes les plantes)
+    const waterTasks = state.plants.map(p => ({
+      kind: 'water',
+      plant: p,
+      label: waterStatus(p).label,
+      sortKey: nextWatering(p).getTime(),
+      cls: waterStatus(p).key === 'overdue' ? 'overdue' : waterStatus(p).key === 'today' ? 'today' : 'future',
+      icon: '💧',
+      btnLabel: '💧 Arrosé',
+      actionKey: 'water'
+    }));
+
+    // Tâches calendaires "ce mois-ci" (taille, bouturage, division, traitement)
+    const monthTasks = [];
+    state.plants.forEach(p => {
+      plantActions(p).forEach(a => {
+        if (a.next && a.next.thisMonth) {
+          monthTasks.push({
+            kind: a.key,
+            plant: p,
+            label: `${a.meta.short} ce mois-ci`,
+            sortKey: 0, // priorité haute (ce mois)
+            cls: 'today',
+            icon: a.meta.icon,
+            btnLabel: `${a.meta.icon} Fait`,
+            actionKey: a.key
+          });
+        }
+      });
+    });
+
+    const tasks = [...monthTasks, ...waterTasks].sort((a, b) => a.sortKey - b.sortKey);
     empty.classList.toggle('hidden', tasks.length > 0);
-    list.innerHTML = tasks.map(t => {
-      const cls = t.status.key === 'overdue' ? 'overdue' : t.status.key === 'today' ? 'today' : 'future';
-      return `
-        <li class="task-item ${cls}" data-id="${t.plant.id}">
-          <div>
-            <strong>${TYPE_EMOJI[t.plant.type]} ${esc(t.plant.name)}</strong>
-            <div class="task-when">${esc(t.status.label)} · ${formatDate(t.next)}</div>
-          </div>
-          <button class="btn primary" data-water="${t.plant.id}">💧 Arrosé</button>
-        </li>
-      `;
-    }).join('');
+    list.innerHTML = tasks.map(t => `
+      <li class="task-item ${t.cls}" data-id="${t.plant.id}">
+        <div>
+          <strong>${TYPE_EMOJI[t.plant.type]} ${esc(t.plant.name)}</strong>
+          <div class="task-when">${t.icon} ${esc(t.label)}</div>
+        </div>
+        <button class="btn primary" data-task-action="${t.actionKey}" data-plant="${t.plant.id}">${t.btnLabel}</button>
+      </li>
+    `).join('');
   }
 
   function renderJournal() {
@@ -521,7 +654,11 @@
       { key: 'sow_indoor',  label: 'Semis intérieur',  icon: '🏠' },
       { key: 'sow_outdoor', label: 'Semis extérieur',  icon: '🌱' },
       { key: 'plant',       label: 'Plantation',       icon: '🪴' },
-      { key: 'harvest',     label: 'Récolte',          icon: '🌾' }
+      { key: 'harvest',     label: 'Récolte',          icon: '🌾' },
+      { key: 'prune',       label: 'Taille / pincement', icon: '✂️' },
+      { key: 'cuttings',    label: 'Bouturage',        icon: '🌿' },
+      { key: 'divide',      label: 'Division / repiquage', icon: '🔀' },
+      { key: 'treat',       label: 'Traitement',       icon: '💧' }
     ];
 
     const matchSearch = (p) => !q || p.name.toLowerCase().includes(q);

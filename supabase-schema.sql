@@ -13,10 +13,20 @@ create table if not exists public.plants (
   planted date,
   interval_days int not null default 3 check (interval_days between 1 and 60),
   last_water date,
+  last_prune date,
+  last_cuttings date,
+  last_divide date,
+  last_treat date,
   notes text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migration : ajout des colonnes si la table existait déjà avant cette version
+alter table public.plants add column if not exists last_prune    date;
+alter table public.plants add column if not exists last_cuttings date;
+alter table public.plants add column if not exists last_divide   date;
+alter table public.plants add column if not exists last_treat    date;
 
 create index if not exists plants_user_id_idx on public.plants(user_id);
 
