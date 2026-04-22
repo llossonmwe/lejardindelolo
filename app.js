@@ -21,6 +21,8 @@
     legume: 'Légume', fruit: 'Fruit', fleur: 'Fleur',
     aromate: 'Aromate', arbre: 'Arbre', autre: 'Autre'
   };
+  const PHOTO_BUCKET = 'plant-photos';
+  const PHOTO_MAX_SIDE = 1600;
 
   // ─── DOM refs ───
   const authScreen = document.getElementById('auth-screen');
@@ -52,6 +54,56 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
+
+  function getPhotoUrl(path) {
+    if (!path) return '';
+    return sb.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl || '';
+  }
+
+  async function deletePhotoByPath(path) {
+    if (!path) return;
+    const { error } = await sb.storage.from(PHOTO_BUCKET).remove([path]);
+    if (error) throw error;
+  }
+
+  async function fileToOptimizedBlob(file) {
+    if (!file || !file.type.startsWith('image/')) throw new Error('Le fichier doit être une image.');
+
+    const img = await new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const el = new Image();
+      el.onload = () => { URL.revokeObjectURL(url); resolve(el); };
+      el.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image invalide.')); };
+      el.src = url;
+    });
+
+    const ratio = Math.min(1, PHOTO_MAX_SIDE / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * ratio));
+    const h = Math.max(1, Math.round(img.height * ratio));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) reject(new Error('Impossible de traiter la photo.'));
+        else resolve(blob);
+      }, 'image/jpeg', 0.82);
+    });
+  }
+
+  async function uploadPlantPhoto(file) {
+    const blob = await fileToOptimizedBlob(file);
+    const path = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { error } = await sb.storage.from(PHOTO_BUCKET).upload(path, blob, {
+      contentType: 'image/jpeg',
+      upsert: false
+    });
+    if (error) throw error;
+    return path;
+  }
 
   function nextWatering(plant) {
     const last = parseDate(plant.last_water);
@@ -274,6 +326,7 @@
       last_cuttings: plant.last_cuttings || null,
       last_divide: plant.last_divide || null,
       last_treat: plant.last_treat || null,
+      photo_path: plant.photo_path || null,
       notes: plant.notes || ''
     };
     if (plant.id) {
@@ -284,9 +337,12 @@
       if (error) throw error;
     }
   }
-  async function deletePlantById(id) {
+  async function deletePlantById(id, photoPath) {
     const { error } = await sb.from('plants').delete().eq('id', id);
     if (error) throw error;
+    if (photoPath) {
+      try { await deletePhotoByPath(photoPath); } catch (_) { /* ignore orphan cleanup failures */ }
+    }
   }
   async function markWatered(id) {
     const { error } = await sb.from('plants').update({ last_water: toISO(today()) }).eq('id', id);
@@ -340,7 +396,7 @@
         openDialog(plant);
       } else if (btn.dataset.action === 'delete') {
         if (confirm(`Supprimer "${plant.name}" ?`)) {
-          try { await deletePlantById(id); toast('Plante supprimée'); await reloadAll(); }
+          try { await deletePlantById(id, plant.photo_path); toast('Plante supprimée'); await reloadAll(); }
           catch (err) { toast('Erreur: ' + err.message); }
         }
       } else if (ACTION_META[btn.dataset.action]) {
@@ -356,12 +412,39 @@
     document.getElementById('search').addEventListener('input', renderPlants);
     document.getElementById('filter-type').addEventListener('change', renderPlants);
 
+    const photoInput = document.getElementById('plant-photo');
+    const photoPreview = document.getElementById('plant-photo-preview');
+    const photoRemoveWrap = document.getElementById('plant-photo-remove-wrap');
+    const photoRemove = document.getElementById('plant-photo-remove');
+    const photoPathInput = document.getElementById('plant-photo-path');
+    let pendingPhotoPreviewUrl = '';
+    const closePlantDialog = () => {
+      if (pendingPhotoPreviewUrl) {
+        URL.revokeObjectURL(pendingPhotoPreviewUrl);
+        pendingPhotoPreviewUrl = '';
+      }
+      document.getElementById('plant-dialog').close();
+    };
+
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+      if (pendingPhotoPreviewUrl) URL.revokeObjectURL(pendingPhotoPreviewUrl);
+      pendingPhotoPreviewUrl = URL.createObjectURL(file);
+      photoPreview.src = pendingPhotoPreviewUrl;
+      photoPreview.classList.remove('hidden');
+      photoRemove.checked = false;
+    });
+
     document.getElementById('add-plant-btn').addEventListener('click', () => openDialog(null));
-    document.getElementById('cancel-btn').addEventListener('click', () => document.getElementById('plant-dialog').close());
+  document.getElementById('cancel-btn').addEventListener('click', closePlantDialog);
 
     document.getElementById('plant-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = e.target;
+      const file = photoInput.files && photoInput.files[0];
+      const removeCurrentPhoto = photoRemove.checked;
+      const previousPhotoPath = photoPathInput.value || '';
       const data = {
         id: f.querySelector('#plant-id').value || null,
         name: f.querySelector('#plant-name').value.trim(),
@@ -374,13 +457,27 @@
         last_cuttings: f.querySelector('#plant-lastcuttings').value,
         last_divide: f.querySelector('#plant-lastdivide').value,
         last_treat: f.querySelector('#plant-lasttreat').value,
+        photo_path: previousPhotoPath,
         notes: f.querySelector('#plant-notes').value.trim()
       };
       if (!data.name) return;
       try {
+        if (removeCurrentPhoto) {
+          if (previousPhotoPath) {
+            try { await deletePhotoByPath(previousPhotoPath); } catch (_) { /* ignore */ }
+          }
+          data.photo_path = null;
+        }
+        if (file) {
+          const uploadedPath = await uploadPlantPhoto(file);
+          data.photo_path = uploadedPath;
+          if (previousPhotoPath && previousPhotoPath !== uploadedPath) {
+            try { await deletePhotoByPath(previousPhotoPath); } catch (_) { /* ignore */ }
+          }
+        }
         await upsertPlant(data);
         toast(data.id ? 'Plante modifiée' : 'Plante ajoutée 🌱');
-        document.getElementById('plant-dialog').close();
+        closePlantDialog();
         await reloadAll();
       } catch (err) {
         toast('Erreur: ' + err.message);
@@ -450,6 +547,7 @@
           planted: p.planted || null,
           interval_days: p.interval_days || p.interval || 3,
           last_water: p.last_water || p.lastWater || null,
+          photo_path: p.photo_path || null,
           notes: p.notes || ''
         }));
         const journalRows = data.journal.map(j => ({
@@ -514,6 +612,7 @@
       const next = nextWatering(plant);
       const cardClass = status.key === 'overdue' ? 'overdue' : status.key === 'today' ? 'today' : '';
       const actions = plantActions(plant);
+      const photoUrl = getPhotoUrl(plant.photo_path);
       const actionsHTML = actions.length === 0 ? '' : `
         <div class="plant-actions">
           ${actions.map(a => {
@@ -538,7 +637,9 @@
       `;
       return `
         <article class="plant-card ${cardClass}" data-id="${plant.id}">
-          <div class="emoji">${TYPE_EMOJI[plant.type] || '🌱'}</div>
+          ${photoUrl
+            ? `<img class="plant-photo" src="${esc(photoUrl)}" alt="Photo de ${esc(plant.name)}" loading="lazy" />`
+            : `<div class="emoji">${TYPE_EMOJI[plant.type] || '🌱'}</div>`}
           <h3>${esc(plant.name)}</h3>
           <div class="meta">${esc(TYPE_LABEL[plant.type] || 'Autre')}${plant.location ? ' · ' + esc(plant.location) : ''}</div>
           <div class="meta">Plantée le ${formatDate(parseDate(plant.planted))}</div>
@@ -694,7 +795,18 @@
     const dialog = document.getElementById('plant-dialog');
     const form = document.getElementById('plant-form');
     const dialogTitle = document.getElementById('dialog-title');
+    const photoInput = form.querySelector('#plant-photo');
+    const photoPreview = form.querySelector('#plant-photo-preview');
+    const photoPathInput = form.querySelector('#plant-photo-path');
+    const photoRemoveWrap = form.querySelector('#plant-photo-remove-wrap');
+    const photoRemove = form.querySelector('#plant-photo-remove');
     form.reset();
+    photoInput.value = '';
+    photoPathInput.value = '';
+    photoRemove.checked = false;
+    photoPreview.src = '';
+    photoPreview.classList.add('hidden');
+    photoRemoveWrap.classList.add('hidden');
     if (plant) {
       dialogTitle.textContent = 'Modifier la plante';
       form.querySelector('#plant-id').value = plant.id;
@@ -708,6 +820,12 @@
       form.querySelector('#plant-lastcuttings').value = plant.last_cuttings || '';
       form.querySelector('#plant-lastdivide').value = plant.last_divide || '';
       form.querySelector('#plant-lasttreat').value = plant.last_treat || '';
+      photoPathInput.value = plant.photo_path || '';
+      if (plant.photo_path) {
+        photoPreview.src = getPhotoUrl(plant.photo_path);
+        photoPreview.classList.remove('hidden');
+        photoRemoveWrap.classList.remove('hidden');
+      }
       form.querySelector('#plant-notes').value = plant.notes || '';
     } else {
       dialogTitle.textContent = 'Nouvelle plante';

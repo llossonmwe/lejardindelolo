@@ -17,6 +17,7 @@ create table if not exists public.plants (
   last_cuttings date,
   last_divide date,
   last_treat date,
+  photo_path text,
   notes text default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -27,6 +28,7 @@ alter table public.plants add column if not exists last_prune    date;
 alter table public.plants add column if not exists last_cuttings date;
 alter table public.plants add column if not exists last_divide   date;
 alter table public.plants add column if not exists last_treat    date;
+alter table public.plants add column if not exists photo_path    text;
 
 create index if not exists plants_user_id_idx on public.plants(user_id);
 
@@ -92,3 +94,53 @@ drop trigger if exists plants_set_updated_at on public.plants;
 create trigger plants_set_updated_at
 before update on public.plants
 for each row execute function public.set_updated_at();
+
+-- ═══════════════════════════════════════════════════════════════
+-- 5. Storage : photos des plantes (mobile + desktop)
+-- ═══════════════════════════════════════════════════════════════
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'plant-photos',
+  'plant-photos',
+  true,
+  5242880,
+  array['image/jpeg','image/png','image/webp']
+)
+on conflict (id) do nothing;
+
+drop policy if exists "photos_public_read" on storage.objects;
+create policy "photos_public_read" on storage.objects
+for select
+using (bucket_id = 'plant-photos');
+
+drop policy if exists "photos_insert_own" on storage.objects;
+create policy "photos_insert_own" on storage.objects
+for insert
+with check (
+  bucket_id = 'plant-photos'
+  and auth.uid() is not null
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "photos_update_own" on storage.objects;
+create policy "photos_update_own" on storage.objects
+for update
+using (
+  bucket_id = 'plant-photos'
+  and auth.uid() is not null
+  and (storage.foldername(name))[1] = auth.uid()::text
+)
+with check (
+  bucket_id = 'plant-photos'
+  and auth.uid() is not null
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "photos_delete_own" on storage.objects;
+create policy "photos_delete_own" on storage.objects
+for delete
+using (
+  bucket_id = 'plant-photos'
+  and auth.uid() is not null
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
