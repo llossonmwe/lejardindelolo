@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌱 Le jardin de Lolo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🌱 Le jardin de Lolo</h1>
+    <nav class="tabs">
+      <button class="tab active" data-tab="plants">Mes plantes</button>
+      <button class="tab" data-tab="tasks">Tâches à venir</button>
+      <button class="tab" data-tab="journal">Journal</button>
+      <button class="tab" data-tab="stats">Statistiques</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Onglet plantes -->
+    <section id="plants" class="tab-panel active">
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="🔍 Rechercher une plante..." />
+        <select id="filter-type">
+          <option value="">Tous les types</option>
+          <option value="legume">Légume</option>
+          <option value="fruit">Fruit</option>
+          <option value="fleur">Fleur</option>
+          <option value="aromate">Aromate</option>
+          <option value="arbre">Arbre</option>
+          <option value="autre">Autre</option>
+        </select>
+        <button id="add-plant-btn" class="btn primary">+ Ajouter une plante</button>
+      </div>
+      <div id="plants-grid" class="grid"></div>
+      <p id="empty-plants" class="empty hidden">Aucune plante pour le moment. Commencez par en ajouter une !</p>
+    </section>
+
+    <!-- Onglet tâches -->
+    <section id="tasks" class="tab-panel">
+      <h2>💧 Arrosages & entretien à venir</h2>
+      <ul id="tasks-list" class="tasks"></ul>
+      <p id="empty-tasks" class="empty hidden">Aucune tâche planifiée.</p>
+    </section>
+
+    <!-- Onglet journal -->
+    <section id="journal" class="tab-panel">
+      <h2>📓 Journal du jardin</h2>
+      <form id="journal-form" class="journal-form">
+        <textarea id="journal-text" placeholder="Notez ici vos observations, semis, récoltes..." required></textarea>
+        <button type="submit" class="btn primary">Ajouter au journal</button>
+      </form>
+      <ul id="journal-list" class="journal-list"></ul>
+    </section>
+
+    <!-- Onglet stats -->
+    <section id="stats" class="tab-panel">
+      <h2>📊 Aperçu</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><span id="stat-total">0</span><small>Plantes</small></div>
+        <div class="stat-card"><span id="stat-watering">0</span><small>À arroser aujourd'hui</small></div>
+        <div class="stat-card"><span id="stat-overdue">0</span><small>En retard</small></div>
+        <div class="stat-card"><span id="stat-journal">0</span><small>Entrées journal</small></div>
+      </div>
+      <h3>Répartition par type</h3>
+      <div id="type-chart" class="chart"></div>
+      <div class="danger-zone">
+        <button id="export-btn" class="btn">⬇️ Exporter (JSON)</button>
+        <label class="btn" for="import-file">⬆️ Importer</label>
+        <input type="file" id="import-file" accept="application/json" hidden />
+        <button id="reset-btn" class="btn danger">🗑️ Tout effacer</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modale ajout/édition plante -->
+  <dialog id="plant-dialog">
+    <form id="plant-form" method="dialog">
+      <h2 id="dialog-title">Nouvelle plante</h2>
+      <input type="hidden" id="plant-id" />
+      <label>Nom <input type="text" id="plant-name" required maxlength="60" /></label>
+      <label>Type
+        <select id="plant-type" required>
+          <option value="legume">Légume</option>
+          <option value="fruit">Fruit</option>
+          <option value="fleur">Fleur</option>
+          <option value="aromate">Aromate</option>
+          <option value="arbre">Arbre</option>
+          <option value="autre">Autre</option>
+        </select>
+      </label>
+      <label>Emplacement <input type="text" id="plant-location" placeholder="Potager, balcon..." maxlength="60" /></label>
+      <label>Date de plantation <input type="date" id="plant-planted" /></label>
+      <label>Arrosage tous les (jours)
+        <input type="number" id="plant-interval" min="1" max="60" value="3" required />
+      </label>
+      <label>Dernier arrosage <input type="date" id="plant-lastwater" /></label>
+      <label>Notes <textarea id="plant-notes" maxlength="500"></textarea></label>
+      <div class="dialog-actions">
+        <button type="button" id="cancel-btn" class="btn">Annuler</button>
+        <button type="submit" class="btn primary">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
