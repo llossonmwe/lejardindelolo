@@ -6,6 +6,15 @@
   <meta name="theme-color" content="#3b8f58" />
   <title>🌱 Le jardin de Lolo</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Jardin" />
+  <meta name="mobile-web-app-capable" content="yes" />
 </head>
 <body>
   <!-- Écran d'identification -->
@@ -171,5 +180,15 @@
   <script src="supabase-config.js"></script>
   <script src="plant-calendar.js"></script>
   <script src="app.js"></script>
+  <script>
+    // Enregistrement du service worker (PWA installable + mode hors-ligne)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(err => {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
