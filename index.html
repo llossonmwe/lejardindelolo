@@ -61,6 +61,9 @@
       <button class="tab" data-tab="calendar">Calendrier</button>
       <button class="tab" data-tab="journal">Journal</button>
       <button class="tab" data-tab="stats">Statistiques</button>
+      <button class="tab" data-tab="meteo">Météo</button>
+      <button class="tab" data-tab="projets">Projets</button>
+      <button class="tab" data-tab="mes-actions">Mes Actions</button>
       <button id="logout-btn" class="tab logout">Déconnexion</button>
     </nav>
   </header>
@@ -145,6 +148,72 @@
         <button id="reset-btn" class="btn danger">🗑️ Tout effacer</button>
       </div>
     </section>
+
+    <!-- Onglet météo -->
+    <section id="meteo" class="tab-panel">
+      <h2>🌤️ Météo & Conseils</h2>
+      <div id="weather-setup" class="weather-setup">
+        <p>Configurez votre localisation pour recevoir des conseils personnalisés.</p>
+        <div class="weather-setup-btns">
+          <button id="weather-geolocate" class="btn primary">📍 Utiliser ma position</button>
+          <div class="weather-city-row">
+            <input type="text" id="weather-city" placeholder="Ou entrez une ville..." />
+            <button id="weather-city-go" class="btn">OK</button>
+          </div>
+        </div>
+      </div>
+      <div id="weather-content" class="hidden">
+        <div id="weather-current" class="weather-current"></div>
+        <div id="weather-advice" class="weather-advice-box"></div>
+        <h3>Prévisions 7 jours</h3>
+        <div id="weather-forecast" class="weather-forecast"></div>
+        <button id="weather-change-loc" class="btn small" style="margin-top:1rem">📍 Changer de localisation</button>
+      </div>
+    </section>
+
+    <!-- Onglet projets plante -->
+    <section id="projets" class="tab-panel">
+      <h2>🌱 Projet Plante</h2>
+      <p class="projets-intro">Explorez le calendrier et planifiez vos futures cultures selon les saisons et la lune.</p>
+      <div class="projets-toolbar">
+        <input type="search" id="projets-search" placeholder="🔍 Rechercher une plante..." />
+        <select id="projets-filter-type">
+          <option value="">Tous les types</option>
+          <option value="legume">🥕 Légume</option>
+          <option value="fruit">🍓 Fruit</option>
+          <option value="fleur">🌸 Fleur</option>
+          <option value="aromate">🌿 Aromate</option>
+        </select>
+      </div>
+      <div id="projets-moon" class="projets-moon"></div>
+      <div id="projets-browse" class="projets-browse"></div>
+      <h3 id="mes-projets-title" class="hidden">📋 Mes projets</h3>
+      <div id="projets-list" class="projets-list"></div>
+    </section>
+
+    <!-- Onglet mes actions -->
+    <section id="mes-actions" class="tab-panel">
+      <div class="ac-header">
+        <button id="ac-prev" class="btn" aria-label="Mois précédent">‹</button>
+        <h2 id="ac-title">—</h2>
+        <button id="ac-next" class="btn" aria-label="Mois suivant">›</button>
+        <button id="ac-today-btn" class="btn small">Aujourd'hui</button>
+      </div>
+      <div class="ac-legend">
+        <span class="ac-leg" data-type="water">💧 Arrosage</span>
+        <span class="ac-leg" data-type="sow">🌱 Semis</span>
+        <span class="ac-leg" data-type="plant-action">🪴 Plantation</span>
+        <span class="ac-leg" data-type="harvest">🌾 Récolte</span>
+        <span class="ac-leg" data-type="prune">✂️ Taille</span>
+        <span class="ac-leg" data-type="project">📋 Projet</span>
+      </div>
+      <div id="ac-grid" class="ac-grid"></div>
+      <div id="ac-day-detail" class="ac-day-detail hidden">
+        <h3 id="ac-detail-title"></h3>
+        <div id="ac-detail-content"></div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Modale ajout/édition plante -->
@@ -206,7 +275,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="plant-calendar.js"></script>
+  <script src="moon.js"></script>
   <script src="app.js"></script>
+  <script src="weather.js"></script>
+  <script src="projets.js"></script>
+  <script src="actions-calendar.js"></script>
   <script>
     // Enregistrement du service worker (PWA installable + mode hors-ligne)
     if ('serviceWorker' in navigator) {
