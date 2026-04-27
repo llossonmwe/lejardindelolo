@@ -694,6 +694,74 @@ dialog textarea { min-height: 60px; resize: vertical; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   MON POTAGER — Grille interactive
+   ═══════════════════════════════════════════════════════════════ */
+.pot-toolbar {
+  display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.pot-toolbar select { padding: 0.5rem 0.8rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; min-width: 150px; }
+
+.pot-settings {
+  display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.pot-settings label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
+.pot-settings input[type="number"] { width: 60px; padding: 0.4rem; border: 1px solid var(--border); border-radius: 6px; text-align: center; }
+
+.pot-grid-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background: var(--card); border-radius: var(--radius); padding: 0.75rem;
+  box-shadow: var(--shadow); margin-bottom: 1rem;
+}
+.pot-grid {
+  display: grid; gap: 3px; min-width: min-content;
+}
+.pot-cell {
+  aspect-ratio: 1; min-width: 60px;
+  border: 2px solid var(--border); border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; background: #f5efe6; gap: 2px;
+  position: relative; overflow: hidden;
+}
+.pot-cell:hover { border-color: var(--green-500); transform: scale(1.03); }
+.pot-cell-selected { border-color: var(--green-600) !important; box-shadow: 0 0 0 3px var(--green-100); }
+.pot-cell-filled { border-color: transparent; }
+.pot-cell-emoji { font-size: 1.4rem; }
+.pot-cell-name { font-size: 0.6rem; color: var(--text); font-weight: 500; text-align: center; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.pot-cell-plus { font-size: 1.2rem; color: var(--muted); opacity: 0.4; }
+.pot-cell:hover .pot-cell-plus { opacity: 1; color: var(--green-500); }
+
+/* Plant picker panel */
+.pot-picker {
+  background: var(--card); border-radius: var(--radius); padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 1rem;
+  border: 2px solid var(--green-500);
+}
+.pot-picker-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.pot-picker-header h3 { margin: 0; font-size: 1rem; color: var(--green-700); }
+.pot-picker input[type="search"] {
+  width: 100%; padding: 0.6rem 0.9rem; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 0.95rem; margin-bottom: 0.75rem;
+}
+.pot-picker-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.pot-pick-section { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; padding: 0.5rem 0.3rem 0.2rem; letter-spacing: 0.5px; }
+.pot-pick-item {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem;
+  background: none; border: 1px solid transparent; border-radius: 8px;
+  cursor: pointer; font-size: 0.9rem; text-align: left; width: 100; transition: background 0.1s;
+}
+.pot-pick-item:hover { background: var(--green-50); border-color: var(--green-500); }
+
+/* Cell info panel */
+.pot-cell-info {
+  background: var(--card); border-radius: var(--radius); padding: 1rem;
+  box-shadow: var(--shadow); margin-bottom: 1rem;
+}
+.pot-info-plant { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.pot-info-emoji { font-size: 2rem; }
+.pot-info-type { font-size: 0.82rem; color: var(--muted); }
+.pot-cell-info-actions { display: flex; gap: 0.5rem; }
+
+/* ═══════════════════════════════════════════════════════════════
    MOBILE — nouvelles sections
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
@@ -712,4 +780,9 @@ dialog textarea { min-height: 60px; resize: vertical; }
   .moon-card { flex-direction: column; text-align: center; }
   .moon-phase-big { font-size: 2rem; }
   .weather-now { flex-direction: column; text-align: center; }
+
+  .pot-cell { min-width: 45px; }
+  .pot-cell-emoji { font-size: 1rem; }
+  .pot-cell-name { font-size: 0.5rem; }
+  .pot-picker-list { max-height: 50vh; }
 }

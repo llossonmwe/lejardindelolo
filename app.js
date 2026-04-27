@@ -40,7 +40,7 @@
   const logoutBtn = document.getElementById('logout-btn');
 
   let authMode = null; // null = écran de choix, 'login' ou 'signup' = formulaire
-  let state = { plants: [], journal: [], projects: [] };
+  let state = { plants: [], journal: [], projects: [], garden_plots: [] };
   let currentUser = null;
   let appStarted = false;
   let calMonth = new Date().getMonth() + 1; // 1..12
@@ -333,10 +333,18 @@
       return data || [];
     } catch (_) { return []; }
   }
+  async function fetchPlots() {
+    try {
+      const { data, error } = await sb.from('garden_plots').select('*').order('created_at', { ascending: true });
+      if (error) { console.warn('garden_plots:', error.message); return []; }
+      return data || [];
+    } catch (_) { return []; }
+  }
   async function reloadAll() {
     state.plants = await fetchPlants();
     state.journal = await fetchJournal();
     state.projects = await fetchProjects();
+    state.garden_plots = await fetchPlots();
     renderAll();
   }
 
@@ -627,7 +635,8 @@
         const { error: e1 } = await sb.from('plants').delete().eq('user_id', currentUser.id);
         const { error: e2 } = await sb.from('journal').delete().eq('user_id', currentUser.id);
         const { error: e3 } = await sb.from('plant_projects').delete().eq('user_id', currentUser.id);
-        if (e1 || e2 || e3) throw (e1 || e2 || e3);
+        const { error: e4 } = await sb.from('garden_plots').delete().eq('user_id', currentUser.id);
+        if (e1 || e2 || e3 || e4) throw (e1 || e2 || e3 || e4);
         toast('Données effacées');
         await reloadAll();
       } catch (err) { toast('Erreur: ' + err.message); }

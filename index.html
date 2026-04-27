@@ -65,6 +65,7 @@
       <button class="tab" data-tab="meteo">Météo</button>
       <button class="tab" data-tab="projets">Projets</button>
       <button class="tab" data-tab="mes-actions">Mes Actions</button>
+      <button class="tab" data-tab="potager">Mon Potager</button>
       <button id="logout-btn" class="tab logout">Déconnexion</button>
     </nav>
   </header>
@@ -215,6 +216,40 @@
       </div>
     </section>
 
+    <!-- Onglet mon potager -->
+    <section id="potager" class="tab-panel">
+      <h2>🗺️ Mon Potager</h2>
+      <div class="pot-toolbar">
+        <select id="pot-select"></select>
+        <button id="pot-new" class="btn primary small">+ Nouveau plan</button>
+        <button id="pot-delete" class="btn danger small">🗑️</button>
+      </div>
+      <div id="pot-settings" class="pot-settings hidden">
+        <label>Colonnes <input type="number" id="pot-cols" min="2" max="20" value="8" /></label>
+        <label>Lignes <input type="number" id="pot-rows" min="2" max="20" value="6" /></label>
+        <button id="pot-resize" class="btn small">Redimensionner</button>
+      </div>
+      <div id="pot-grid-wrap" class="pot-grid-wrap">
+        <div id="pot-grid" class="pot-grid"></div>
+      </div>
+      <div id="pot-picker" class="pot-picker hidden">
+        <div class="pot-picker-header">
+          <h3 id="pot-picker-title">Choisir une plante</h3>
+          <button id="pot-picker-close" class="btn small">✕</button>
+        </div>
+        <input type="search" id="pot-picker-search" placeholder="🔍 Rechercher..." />
+        <div id="pot-picker-list" class="pot-picker-list"></div>
+      </div>
+      <div id="pot-cell-info" class="pot-cell-info hidden">
+        <div id="pot-cell-info-content"></div>
+        <div class="pot-cell-info-actions">
+          <button id="pot-cell-remove" class="btn danger small">Retirer la plante</button>
+          <button id="pot-cell-info-close" class="btn small">Fermer</button>
+        </div>
+      </div>
+      <p id="pot-empty" class="empty">Créez un plan pour dessiner votre potager.</p>
+    </section>
+
   </main>
 
   <!-- Modale ajout/édition plante -->
@@ -281,6 +316,7 @@
   <script src="weather.js"></script>
   <script src="projets.js"></script>
   <script src="actions-calendar.js"></script>
+  <script src="potager.js"></script>
   <script>
     // Enregistrement du service worker (PWA installable + mode hors-ligne)
     if ('serviceWorker' in navigator) {
