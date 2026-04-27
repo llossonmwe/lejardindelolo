@@ -205,14 +205,17 @@
     authForm.classList.remove('hidden');
     authError.classList.add('hidden');
     authInfo.classList.add('hidden');
+    const forgotBtn = document.getElementById('auth-forgot');
     if (mode === 'signup') {
       authSubtitle.textContent = 'Créez votre compte pour commencer';
       authSubmit.textContent = 'Créer mon compte';
       authPass.autocomplete = 'new-password';
+      forgotBtn.classList.add('hidden');
     } else {
       authSubtitle.textContent = 'Connectez-vous pour accéder à votre jardin';
       authSubmit.textContent = 'Se connecter';
       authPass.autocomplete = 'current-password';
+      forgotBtn.classList.remove('hidden');
     }
     setTimeout(() => authUser.focus(), 50);
   }
@@ -226,6 +229,21 @@
   });
 
   authBack.addEventListener('click', showChoice);
+
+  document.getElementById('auth-forgot').addEventListener('click', async () => {
+    const email = authUser.value.trim();
+    if (!email) {
+      showErr('Entrez votre email ci-dessus, puis cliquez sur "Mot de passe oublié".');
+      return;
+    }
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      showInfo('Un email de réinitialisation a été envoyé à ' + email + '. Vérifiez votre boîte de réception.');
+    } catch (err) {
+      showErr('Erreur : ' + (err.message || err));
+    }
+  });
 
   const showErr = (msg) => { authError.textContent = msg; authError.classList.remove('hidden'); authInfo.classList.add('hidden'); };
   const showInfo = (msg) => { authInfo.textContent = msg; authInfo.classList.remove('hidden'); authError.classList.add('hidden'); };
