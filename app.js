@@ -292,6 +292,24 @@
   });
 
   sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      // User clicked a password reset link
+      const newPassword = prompt('Entrez votre nouveau mot de passe (6 caractères min) :');
+      if (newPassword && newPassword.length >= 6) {
+        sb.auth.updateUser({ password: newPassword }).then(({ error }) => {
+          if (error) {
+            alert('Erreur : ' + error.message);
+          } else {
+            alert('Mot de passe mis à jour avec succès ! Vous êtes maintenant connecté.');
+            // Clean URL hash
+            history.replaceState(null, '', location.pathname);
+          }
+        });
+      } else if (newPassword !== null) {
+        alert('Le mot de passe doit faire au moins 6 caractères.');
+      }
+      return;
+    }
     if (session?.user) {
       if (!appStarted) startApp(session.user);
     } else if (appStarted) {
