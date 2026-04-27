@@ -914,3 +914,15 @@ dialog textarea { min-height: 60px; resize: vertical; }
   .social-chat-messages { max-height: 50vh; }
   .social-msg { max-width: 85%; }
 }
+
+/* Reset password overlay */
+.reset-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem;
+}

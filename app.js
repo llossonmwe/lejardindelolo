@@ -14,6 +14,15 @@
     window.SUPABASE_CONFIG.anonKey
   );
 
+  // ═══════════════════════════════════════════════════════════════
+  // Détection du mode réinitialisation de mot de passe (avant tout)
+  // ═══════════════════════════════════════════════════════════════
+  let isPasswordRecovery = false;
+  const hashParams = new URLSearchParams(location.hash.replace('#', '?'));
+  if (hashParams.get('type') === 'recovery' && hashParams.get('access_token')) {
+    isPasswordRecovery = true;
+  }
+
   const TYPE_EMOJI = {
     legume: '🥕', fruit: '🍓', fleur: '🌸', aromate: '🌿', arbre: '🌳', autre: '🌱'
   };
@@ -294,22 +303,59 @@
   });
 
   sb.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      // User clicked a password reset link
-      const newPassword = prompt('Entrez votre nouveau mot de passe (6 caractères min) :');
-      if (newPassword && newPassword.length >= 6) {
-        sb.auth.updateUser({ password: newPassword }).then(({ error }) => {
-          if (error) {
-            alert('Erreur : ' + error.message);
-          } else {
-            alert('Mot de passe mis à jour avec succès ! Vous êtes maintenant connecté.');
-            // Clean URL hash
-            history.replaceState(null, '', location.pathname);
-          }
-        });
-      } else if (newPassword !== null) {
-        alert('Le mot de passe doit faire au moins 6 caractères.');
-      }
+    if (event === 'PASSWORD_RECOVERY' || (isPasswordRecovery && event === 'SIGNED_IN')) {
+      isPasswordRecovery = false;
+      // Afficher un formulaire de réinitialisation au lieu d'un prompt
+      document.getElementById('auth-section').classList.add('hidden');
+      document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+      document.querySelector('.tab-bar')?.classList.add('hidden');
+
+      const overlay = document.createElement('div');
+      overlay.className = 'reset-overlay';
+      overlay.innerHTML = `
+        <div class="card" style="max-width:400px;margin:80px auto;padding:2rem;">
+          <h2 style="text-align:center;">🔑 Nouveau mot de passe</h2>
+          <p style="text-align:center;color:#666;margin-bottom:1.5rem;">Choisissez votre nouveau mot de passe</p>
+          <input type="password" id="reset-pw1" placeholder="Nouveau mot de passe (6 car. min)" style="width:100%;padding:.7rem;border:1px solid #ccc;border-radius:8px;margin-bottom:.8rem;box-sizing:border-box;">
+          <input type="password" id="reset-pw2" placeholder="Confirmer le mot de passe" style="width:100%;padding:.7rem;border:1px solid #ccc;border-radius:8px;margin-bottom:1rem;box-sizing:border-box;">
+          <button id="reset-confirm" style="width:100%;padding:.8rem;background:#27ae60;color:white;border:none;border-radius:8px;font-size:1rem;cursor:pointer;">Changer le mot de passe</button>
+          <p id="reset-error" style="color:#e74c3c;text-align:center;margin-top:.8rem;display:none;"></p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      document.getElementById('reset-confirm').addEventListener('click', async () => {
+        const pw1 = document.getElementById('reset-pw1').value;
+        const pw2 = document.getElementById('reset-pw2').value;
+        const errEl = document.getElementById('reset-error');
+        errEl.style.display = 'none';
+
+        if (!pw1 || pw1.length < 6) {
+          errEl.textContent = 'Le mot de passe doit faire au moins 6 caractères.';
+          errEl.style.display = 'block';
+          return;
+        }
+        if (pw1 !== pw2) {
+          errEl.textContent = 'Les mots de passe ne correspondent pas.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        const { error } = await sb.auth.updateUser({ password: pw1 });
+        if (error) {
+          errEl.textContent = 'Erreur : ' + error.message;
+          errEl.style.display = 'block';
+        } else {
+          overlay.innerHTML = `
+            <div class="card" style="max-width:400px;margin:80px auto;padding:2rem;text-align:center;">
+              <h2>✅ Mot de passe mis à jour !</h2>
+              <p style="margin:1rem 0;">Vous allez être redirigé…</p>
+            </div>
+          `;
+          history.replaceState(null, '', location.pathname);
+          setTimeout(() => location.reload(), 2000);
+        }
+      });
       return;
     }
     if (session?.user) {
