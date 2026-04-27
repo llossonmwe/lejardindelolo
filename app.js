@@ -309,9 +309,11 @@
     return data || [];
   }
   async function fetchProjects() {
-    const { data, error } = await sb.from('plant_projects').select('*').order('created_at', { ascending: true });
-    if (error) { console.error(error); return []; }
-    return data || [];
+    try {
+      const { data, error } = await sb.from('plant_projects').select('*').order('created_at', { ascending: true });
+      if (error) { console.warn('plant_projects:', error.message); return []; }
+      return data || [];
+    } catch (_) { return []; }
   }
   async function reloadAll() {
     state.plants = await fetchPlants();
