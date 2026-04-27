@@ -18,11 +18,12 @@
   // Détection du mode réinitialisation de mot de passe (avant tout)
   // ═══════════════════════════════════════════════════════════════
   let isPasswordRecovery = false;
-  // Supabase peut mettre les tokens dans le hash (#) ou en query params (?)
+  const queryParams = new URLSearchParams(location.search);
   const fullFragment = location.hash.substring(1);
   const hashParams = new URLSearchParams(fullFragment);
-  const queryParams = new URLSearchParams(location.search);
-  if ((hashParams.get('type') === 'recovery') || (queryParams.get('type') === 'recovery')) {
+  if (queryParams.get('reset') === '1' ||
+      hashParams.get('type') === 'recovery' ||
+      queryParams.get('type') === 'recovery') {
     isPasswordRecovery = true;
   }
 
@@ -316,7 +317,7 @@
     }
     try {
       const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://llossonmwe.github.io/lejardindelolo/'
+        redirectTo: 'https://llossonmwe.github.io/lejardindelolo/?reset=1'
       });
       if (error) throw error;
       showInfo('Un email de réinitialisation a été envoyé à ' + email + '. Vérifiez votre boîte de réception.');
