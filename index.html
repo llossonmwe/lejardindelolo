@@ -66,6 +66,7 @@
       <button class="tab" data-tab="calendar">📋 Calendrier</button>
       <button class="tab" data-tab="journal">📓 Journal</button>
       <button class="tab" data-tab="stats">📊 Stats</button>
+      <button class="tab" data-tab="social">👥 Communauté</button>
       <button id="logout-btn" class="tab logout">Déconnexion</button>
     </nav>
   </header>
@@ -250,6 +251,103 @@
       <p id="pot-empty" class="empty">Créez un plan pour dessiner votre potager.</p>
     </section>
 
+    <!-- Onglet communauté -->
+    <section id="social" class="tab-panel">
+      <!-- Setup profil (première fois) -->
+      <div id="social-profile-setup" class="hidden">
+        <h2>👤 Créez votre profil</h2>
+        <p class="projets-intro">Choisissez un pseudo pour rejoindre la communauté.</p>
+        <div class="social-profile-form">
+          <label>Pseudo <input type="text" id="social-username" maxlength="30" required placeholder="Mon pseudo..." /></label>
+          <label>Bio <textarea id="social-bio" maxlength="200" placeholder="Passionné de jardinage..."></textarea></label>
+          <button id="social-create-profile" class="btn primary">Créer mon profil</button>
+        </div>
+      </div>
+
+      <!-- Contenu social (après profil créé) -->
+      <div id="social-main" class="hidden">
+        <div class="social-header">
+          <div class="social-subtabs">
+            <button class="social-subtab active" data-subtab="feed">📰 Fil</button>
+            <button class="social-subtab" data-subtab="friends">👥 Amis</button>
+            <button class="social-subtab" data-subtab="messages">💬 Messages <span id="social-unread-badge" class="social-badge hidden">0</span></button>
+            <button class="social-subtab" data-subtab="forum">📢 Forum</button>
+          </div>
+          <button id="social-profile-btn" class="btn small">👤 Mon profil</button>
+        </div>
+
+        <!-- Sous-onglet Fil -->
+        <div id="social-feed" class="social-panel active">
+          <div class="social-compose">
+            <textarea id="social-post-text" placeholder="Partagez quelque chose avec vos amis..." maxlength="500"></textarea>
+            <div class="social-compose-actions">
+              <select id="social-post-type">
+                <option value="garden">🌱 Mon jardin</option>
+                <option value="tip">💡 Conseil</option>
+                <option value="question">❓ Question</option>
+              </select>
+              <button id="social-post-submit" class="btn primary small">Publier</button>
+            </div>
+          </div>
+          <div id="social-feed-list"></div>
+        </div>
+
+        <!-- Sous-onglet Amis -->
+        <div id="social-friends" class="social-panel">
+          <div class="social-search-row">
+            <input type="search" id="social-search-user" placeholder="🔍 Rechercher un pseudo..." />
+            <button id="social-search-btn" class="btn small">Chercher</button>
+          </div>
+          <div id="social-search-results"></div>
+          <div id="social-pending-requests"></div>
+          <h3 id="social-friends-title" class="hidden">Mes amis</h3>
+          <div id="social-friends-list"></div>
+        </div>
+
+        <!-- Sous-onglet Messages -->
+        <div id="social-messages" class="social-panel">
+          <div id="social-conversations"></div>
+          <div id="social-chat" class="hidden">
+            <div class="social-chat-header">
+              <button id="social-chat-back" class="btn small">← Retour</button>
+              <span id="social-chat-name"></span>
+            </div>
+            <div id="social-chat-messages" class="social-chat-messages"></div>
+            <div class="social-chat-compose">
+              <input type="text" id="social-chat-input" placeholder="Votre message..." maxlength="500" />
+              <button id="social-chat-send" class="btn primary small">Envoyer</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sous-onglet Forum -->
+        <div id="social-forum" class="social-panel">
+          <div class="social-compose">
+            <textarea id="social-forum-text" placeholder="Partagez un conseil ou posez une question..." maxlength="500"></textarea>
+            <div class="social-compose-actions">
+              <select id="social-forum-type">
+                <option value="tip">💡 Conseil</option>
+                <option value="question">❓ Question</option>
+              </select>
+              <button id="social-forum-submit" class="btn primary small">Publier</button>
+            </div>
+          </div>
+          <div id="social-forum-list"></div>
+        </div>
+      </div>
+
+      <!-- Dialog profil edit -->
+      <div id="social-profile-edit" class="social-profile-edit hidden">
+        <h3>Modifier mon profil</h3>
+        <label>Pseudo <input type="text" id="social-edit-username" maxlength="30" /></label>
+        <label>Bio <textarea id="social-edit-bio" maxlength="200"></textarea></label>
+        <div class="social-profile-edit-actions">
+          <button id="social-save-profile" class="btn primary small">Enregistrer</button>
+          <button id="social-cancel-profile" class="btn small">Annuler</button>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Modale ajout/édition plante -->
@@ -317,6 +415,7 @@
   <script src="projets.js"></script>
   <script src="actions-calendar.js"></script>
   <script src="potager.js"></script>
+  <script src="social.js"></script>
   <script>
     // Enregistrement du service worker (PWA installable + mode hors-ligne)
     if ('serviceWorker' in navigator) {

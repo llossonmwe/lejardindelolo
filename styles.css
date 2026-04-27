@@ -762,6 +762,129 @@ dialog textarea { min-height: 60px; resize: vertical; }
 .pot-cell-info-actions { display: flex; gap: 0.5rem; }
 
 /* ═══════════════════════════════════════════════════════════════
+   COMMUNAUTÉ — Réseau social
+   ═══════════════════════════════════════════════════════════════ */
+.social-profile-form { max-width: 400px; display: flex; flex-direction: column; gap: 0.75rem; }
+.social-profile-form label { display: flex; flex-direction: column; font-size: 0.85rem; color: var(--muted); gap: 0.25rem; }
+.social-profile-form input, .social-profile-form textarea {
+  padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+}
+.social-profile-form textarea { min-height: 60px; resize: vertical; }
+
+.social-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.social-subtabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.social-subtab {
+  background: var(--green-50); border: 1px solid var(--border); padding: 0.5rem 0.9rem;
+  border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.15s; position: relative;
+}
+.social-subtab:hover { border-color: var(--green-500); }
+.social-subtab.active { background: var(--green-600); color: white; border-color: var(--green-600); }
+
+.social-panel { display: none; }
+.social-panel.active { display: block; }
+
+.social-badge {
+  background: var(--danger); color: white; font-size: 0.7rem; font-weight: 700;
+  padding: 0.15rem 0.45rem; border-radius: 999px; margin-left: 0.3rem;
+}
+.social-badge-inline { font-size: 0.8rem; color: var(--muted); padding: 0.3rem 0.6rem; }
+
+/* Compose box */
+.social-compose {
+  background: var(--card); border-radius: var(--radius); padding: 1rem;
+  box-shadow: var(--shadow); margin-bottom: 1rem;
+}
+.social-compose textarea {
+  width: 100%; min-height: 70px; padding: 0.6rem 0.8rem; border: 1px solid var(--border);
+  border-radius: 8px; font-family: inherit; font-size: 0.95rem; resize: vertical; margin-bottom: 0.5rem;
+}
+.social-compose-actions { display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; }
+.social-compose-actions select { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+
+/* Posts */
+.social-post {
+  background: var(--card); border-radius: var(--radius); padding: 1rem;
+  box-shadow: var(--shadow); margin-bottom: 0.75rem;
+}
+.social-post-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.5rem; }
+.social-post-author { display: flex; align-items: center; gap: 0.5rem; }
+.social-avatar-small { font-size: 1.5rem; }
+.social-post-meta { font-size: 0.75rem; color: var(--muted); display: block; }
+.social-post-content { font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.6rem; white-space: pre-wrap; }
+.social-post-actions { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem; }
+.social-comment-count { font-size: 0.85rem; color: var(--muted); }
+
+/* Comments */
+.social-comments { border-top: 1px solid var(--border); padding-top: 0.5rem; }
+.social-comment {
+  font-size: 0.85rem; padding: 0.3rem 0; line-height: 1.4;
+}
+.social-comment strong { color: var(--green-700); }
+.social-comment-form { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+.social-comment-input {
+  flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.85rem;
+}
+
+/* User cards (friends, search) */
+.social-user-card {
+  background: var(--card); border-radius: var(--radius); padding: 0.8rem 1rem;
+  box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; margin-bottom: 0.5rem;
+}
+.social-user-info { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
+.social-user-bio { font-size: 0.8rem; color: var(--muted); }
+.social-req-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+.social-search-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.social-search-row input { flex: 1; padding: 0.6rem 0.9rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; }
+
+/* Conversations */
+.social-conv-item {
+  background: var(--card); border-radius: var(--radius); padding: 0.8rem 1rem;
+  box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; margin-bottom: 0.5rem; cursor: pointer; transition: background 0.1s;
+}
+.social-conv-item:hover { background: var(--green-50); }
+.social-conv-info { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
+.social-conv-preview { font-size: 0.82rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.social-conv-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; flex-shrink: 0; }
+.social-conv-date { font-size: 0.72rem; color: var(--muted); }
+
+/* Chat */
+.social-chat-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.social-chat-header span { font-weight: 600; font-size: 1.1rem; }
+.social-chat-messages {
+  background: var(--green-50); border-radius: var(--radius); padding: 1rem;
+  min-height: 200px; max-height: 400px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;
+}
+.social-msg { display: flex; flex-direction: column; max-width: 75%; }
+.social-msg-own { align-self: flex-end; align-items: flex-end; }
+.social-msg-other { align-self: flex-start; align-items: flex-start; }
+.social-msg-bubble {
+  padding: 0.5rem 0.8rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.4;
+  word-break: break-word;
+}
+.social-msg-own .social-msg-bubble { background: var(--green-600); color: white; }
+.social-msg-other .social-msg-bubble { background: var(--card); box-shadow: var(--shadow); }
+.social-msg-time { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+.social-chat-compose { display: flex; gap: 0.5rem; }
+.social-chat-compose input { flex: 1; padding: 0.6rem 0.9rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; }
+
+/* Profile edit */
+.social-profile-edit {
+  background: var(--card); border-radius: var(--radius); padding: 1rem;
+  box-shadow: var(--shadow); margin-bottom: 1rem; max-width: 400px;
+}
+.social-profile-edit h3 { margin: 0 0 0.75rem; color: var(--green-700); }
+.social-profile-edit label { display: flex; flex-direction: column; font-size: 0.85rem; color: var(--muted); gap: 0.25rem; margin-bottom: 0.5rem; }
+.social-profile-edit input, .social-profile-edit textarea {
+  padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+}
+.social-profile-edit textarea { min-height: 60px; resize: vertical; }
+.social-profile-edit-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+/* ═══════════════════════════════════════════════════════════════
    MOBILE — nouvelles sections
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
@@ -785,4 +908,9 @@ dialog textarea { min-height: 60px; resize: vertical; }
   .pot-cell-emoji { font-size: 1rem; }
   .pot-cell-name { font-size: 0.5rem; }
   .pot-picker-list { max-height: 50vh; }
+
+  .social-subtabs { width: 100%; }
+  .social-subtab { flex: 1; text-align: center; font-size: 0.78rem; padding: 0.45rem 0.5rem; }
+  .social-chat-messages { max-height: 50vh; }
+  .social-msg { max-width: 85%; }
 }

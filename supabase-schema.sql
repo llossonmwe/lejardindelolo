@@ -175,7 +175,178 @@ before update on public.garden_plots
 for each row execute function public.set_updated_at();
 
 -- ═══════════════════════════════════════════════════════════════
--- 7. Storage : photos des plantes (mobile + desktop)
+-- 7. Réseau social — Profils
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  username text unique not null,
+  bio text default '',
+  avatar_path text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "profiles_select_all" on public.profiles;
+create policy "profiles_select_all" on public.profiles
+  for select using (true);
+
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own" on public.profiles
+  for insert with check (auth.uid() = id);
+
+drop policy if exists "profiles_update_own" on public.profiles;
+create policy "profiles_update_own" on public.profiles
+  for update using (auth.uid() = id) with check (auth.uid() = id);
+
+drop trigger if exists profiles_set_updated_at on public.profiles;
+create trigger profiles_set_updated_at
+before update on public.profiles
+for each row execute function public.set_updated_at();
+
+-- ═══════════════════════════════════════════════════════════════
+-- 8. Réseau social — Amitiés
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.friendships (
+  id uuid primary key default gen_random_uuid(),
+  requester_id uuid not null references auth.users(id) on delete cascade,
+  addressee_id uuid not null references auth.users(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending','accepted','declined')),
+  created_at timestamptz not null default now(),
+  unique(requester_id, addressee_id)
+);
+
+create index if not exists friendships_requester_idx on public.friendships(requester_id);
+create index if not exists friendships_addressee_idx on public.friendships(addressee_id);
+alter table public.friendships enable row level security;
+
+drop policy if exists "friendships_select" on public.friendships;
+create policy "friendships_select" on public.friendships
+  for select using (auth.uid() = requester_id or auth.uid() = addressee_id);
+
+drop policy if exists "friendships_insert" on public.friendships;
+create policy "friendships_insert" on public.friendships
+  for insert with check (auth.uid() = requester_id);
+
+drop policy if exists "friendships_update" on public.friendships;
+create policy "friendships_update" on public.friendships
+  for update using (auth.uid() = addressee_id);
+
+drop policy if exists "friendships_delete" on public.friendships;
+create policy "friendships_delete" on public.friendships
+  for delete using (auth.uid() = requester_id or auth.uid() = addressee_id);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 9. Réseau social — Posts (fil + forum)
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.posts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content text not null,
+  photo_path text,
+  post_type text not null default 'garden' check (post_type in ('garden','tip','question')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists posts_user_id_idx on public.posts(user_id);
+create index if not exists posts_type_idx on public.posts(post_type);
+alter table public.posts enable row level security;
+
+-- Tous les utilisateurs authentifiés peuvent lire les posts
+drop policy if exists "posts_select" on public.posts;
+create policy "posts_select" on public.posts
+  for select using (auth.uid() is not null);
+
+drop policy if exists "posts_insert_own" on public.posts;
+create policy "posts_insert_own" on public.posts
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "posts_delete_own" on public.posts;
+create policy "posts_delete_own" on public.posts
+  for delete using (auth.uid() = user_id);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 10. Réseau social — Likes
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.post_likes (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.posts(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique(post_id, user_id)
+);
+
+alter table public.post_likes enable row level security;
+
+drop policy if exists "post_likes_select" on public.post_likes;
+create policy "post_likes_select" on public.post_likes
+  for select using (auth.uid() is not null);
+
+drop policy if exists "post_likes_insert" on public.post_likes;
+create policy "post_likes_insert" on public.post_likes
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "post_likes_delete" on public.post_likes;
+create policy "post_likes_delete" on public.post_likes
+  for delete using (auth.uid() = user_id);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 11. Réseau social — Commentaires
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.post_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.posts(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists post_comments_post_idx on public.post_comments(post_id);
+alter table public.post_comments enable row level security;
+
+drop policy if exists "post_comments_select" on public.post_comments;
+create policy "post_comments_select" on public.post_comments
+  for select using (auth.uid() is not null);
+
+drop policy if exists "post_comments_insert" on public.post_comments;
+create policy "post_comments_insert" on public.post_comments
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "post_comments_delete" on public.post_comments;
+create policy "post_comments_delete" on public.post_comments
+  for delete using (auth.uid() = user_id);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 12. Réseau social — Messagerie privée
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null references auth.users(id) on delete cascade,
+  receiver_id uuid not null references auth.users(id) on delete cascade,
+  content text not null,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists messages_sender_idx on public.messages(sender_id);
+create index if not exists messages_receiver_idx on public.messages(receiver_id);
+alter table public.messages enable row level security;
+
+drop policy if exists "messages_select" on public.messages;
+create policy "messages_select" on public.messages
+  for select using (auth.uid() = sender_id or auth.uid() = receiver_id);
+
+drop policy if exists "messages_insert" on public.messages;
+create policy "messages_insert" on public.messages
+  for insert with check (auth.uid() = sender_id);
+
+drop policy if exists "messages_update" on public.messages;
+create policy "messages_update" on public.messages
+  for update using (auth.uid() = receiver_id);
+
+-- ═══════════════════════════════════════════════════════════════
+-- 13. Storage : photos des plantes (mobile + desktop)
 -- ═══════════════════════════════════════════════════════════════
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (

@@ -6,7 +6,7 @@
 //
 // Pour déployer une nouvelle version, change CACHE_VERSION ci-dessous.
 
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const APP_CACHE = 'jardin-app-' + CACHE_VERSION;
 const CDN_CACHE = 'jardin-cdn-' + CACHE_VERSION;
 
@@ -22,6 +22,7 @@ const APP_SHELL = [
   './projets.js',
   './actions-calendar.js',
   './potager.js',
+  './social.js',
   './supabase-config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
