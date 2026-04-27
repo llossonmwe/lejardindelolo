@@ -40,7 +40,7 @@
   const logoutBtn = document.getElementById('logout-btn');
 
   let authMode = null; // null = écran de choix, 'login' ou 'signup' = formulaire
-  let state = { plants: [], journal: [] };
+  let state = { plants: [], journal: [], projects: [] };
   let currentUser = null;
   let appStarted = false;
   let calMonth = new Date().getMonth() + 1; // 1..12
@@ -308,9 +308,15 @@
     if (error) { console.error(error); toast('Erreur chargement journal'); return []; }
     return data || [];
   }
+  async function fetchProjects() {
+    const { data, error } = await sb.from('plant_projects').select('*').order('created_at', { ascending: true });
+    if (error) { console.error(error); return []; }
+    return data || [];
+  }
   async function reloadAll() {
     state.plants = await fetchPlants();
     state.journal = await fetchJournal();
+    state.projects = await fetchProjects();
     renderAll();
   }
 
@@ -571,6 +577,22 @@
           const { error } = await sb.from('journal').insert(journalRows);
           if (error) throw error;
         }
+        // Import projects if present
+        if (Array.isArray(data.projects) && data.projects.length) {
+          const projectRows = data.projects.map(p => ({
+            user_id: currentUser.id,
+            plant_name: p.plant_name || '',
+            plant_type: p.plant_type || 'autre',
+            target_action: p.target_action || 'plant',
+            target_month: p.target_month || 1,
+            notes: p.notes || '',
+            status: p.status || 'planned'
+          })).filter(p => p.plant_name);
+          if (projectRows.length) {
+            const { error } = await sb.from('plant_projects').insert(projectRows);
+            if (error) throw error;
+          }
+        }
         toast('Import réussi ✅');
         await reloadAll();
       } catch (err) {
@@ -584,7 +606,8 @@
       try {
         const { error: e1 } = await sb.from('plants').delete().eq('user_id', currentUser.id);
         const { error: e2 } = await sb.from('journal').delete().eq('user_id', currentUser.id);
-        if (e1 || e2) throw (e1 || e2);
+        const { error: e3 } = await sb.from('plant_projects').delete().eq('user_id', currentUser.id);
+        if (e1 || e2 || e3) throw (e1 || e2 || e3);
         toast('Données effacées');
         await reloadAll();
       } catch (err) { toast('Erreur: ' + err.message); }
@@ -859,5 +882,18 @@
     renderCalendar();
     renderJournal();
     renderStats();
+    Object.values(window.APP._extraRenders).forEach(fn => { try { fn(); } catch(e) { console.error(e); } });
   }
+
+  // ─── Expose API for external modules ───
+  window.APP = {
+    get state() { return state; },
+    get sb() { return sb; },
+    get currentUser() { return currentUser; },
+    toast, today, parseDate, formatDate, toISO, daysBetween, esc,
+    TYPE_EMOJI, TYPE_LABEL, MONTHS_FR, ACTION_META,
+    findCalendarEntry, plantActions, nextWatering, waterStatus, nextActionMonth,
+    getPhotoUrl, reloadAll,
+    _extraRenders: {}
+  };
 })();

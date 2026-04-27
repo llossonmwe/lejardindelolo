@@ -96,6 +96,47 @@ before update on public.plants
 for each row execute function public.set_updated_at();
 
 -- ═══════════════════════════════════════════════════════════════
+-- 5. Table des projets de plantes
+-- ═══════════════════════════════════════════════════════════════
+create table if not exists public.plant_projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  plant_name text not null,
+  plant_type text not null,
+  target_action text not null default 'plant',
+  target_month int check (target_month between 1 and 12),
+  notes text default '',
+  status text not null default 'planned'
+    check (status in ('planned','started','done','cancelled')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists plant_projects_user_id_idx on public.plant_projects(user_id);
+alter table public.plant_projects enable row level security;
+
+drop policy if exists "plant_projects_select_own" on public.plant_projects;
+create policy "plant_projects_select_own" on public.plant_projects
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "plant_projects_insert_own" on public.plant_projects;
+create policy "plant_projects_insert_own" on public.plant_projects
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "plant_projects_update_own" on public.plant_projects;
+create policy "plant_projects_update_own" on public.plant_projects
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "plant_projects_delete_own" on public.plant_projects;
+create policy "plant_projects_delete_own" on public.plant_projects
+  for delete using (auth.uid() = user_id);
+
+drop trigger if exists plant_projects_set_updated_at on public.plant_projects;
+create trigger plant_projects_set_updated_at
+before update on public.plant_projects
+for each row execute function public.set_updated_at();
+
+-- ═══════════════════════════════════════════════════════════════
 -- 5. Storage : photos des plantes (mobile + desktop)
 -- ═══════════════════════════════════════════════════════════════
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
