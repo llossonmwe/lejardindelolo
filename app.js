@@ -237,7 +237,9 @@
       return;
     }
     try {
-      const { error } = await sb.auth.resetPasswordForEmail(email);
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://llossonmwe.github.io/lejardindelolo/'
+      });
       if (error) throw error;
       showInfo('Un email de réinitialisation a été envoyé à ' + email + '. Vérifiez votre boîte de réception.');
     } catch (err) {
